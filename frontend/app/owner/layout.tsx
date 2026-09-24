@@ -23,6 +23,9 @@ export default function OwnerLayout({
         <Link href="/owner/stock/receive" className="hover:text-primary">
           Receive stock
         </Link>
+        <Link href="/owner/stock/write-off" className="hover:text-primary">
+          Write off
+        </Link>
       </nav>
       {children}
     </div>
