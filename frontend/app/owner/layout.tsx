@@ -6,12 +6,12 @@ export default function OwnerLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-zinc-50 p-8 dark:bg-black">
-      <nav className="mb-8 flex gap-6 text-sm font-medium text-zinc-600 dark:text-zinc-400">
-        <Link href="/owner/staff" className="hover:text-zinc-900 dark:hover:text-zinc-50">
+    <div className="min-h-screen bg-bg p-8">
+      <nav className="mb-8 flex gap-6 text-sm font-medium text-secondary">
+        <Link href="/owner/staff" className="hover:text-primary">
           Staff
         </Link>
-        <Link href="/owner/devices" className="hover:text-zinc-900 dark:hover:text-zinc-50">
+        <Link href="/owner/devices" className="hover:text-primary">
           Devices
         </Link>
       </nav>

@@ -27,23 +27,23 @@ export default async function StaffPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="mb-6 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
+      <h1 className="mb-6 text-2xl font-semibold text-ink">
         Staff
       </h1>
 
       <form
         action={createStaffAction}
-        className="mb-8 flex flex-wrap items-end gap-3 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950"
+        className="mb-8 flex flex-wrap items-end gap-3 rounded-lg border border-ink/10 p-4"
       >
-        <label className="flex flex-col text-sm text-zinc-600 dark:text-zinc-400">
+        <label className="flex flex-col text-sm text-ink/70">
           Name
           <input
             name="name"
             required
-            className="rounded border border-zinc-300 px-2 py-1 dark:border-zinc-700 dark:bg-zinc-900"
+            className="rounded border border-ink/20 bg-bg px-2 py-1"
           />
         </label>
-        <label className="flex flex-col text-sm text-zinc-600 dark:text-zinc-400">
+        <label className="flex flex-col text-sm text-ink/70">
           4-digit PIN
           <input
             name="pin"
@@ -51,12 +51,12 @@ export default async function StaffPage() {
             maxLength={4}
             pattern="\d{4}"
             inputMode="numeric"
-            className="rounded border border-zinc-300 px-2 py-1 dark:border-zinc-700 dark:bg-zinc-900"
+            className="rounded border border-ink/20 bg-bg px-2 py-1"
           />
         </label>
         <button
           type="submit"
-          className="rounded bg-zinc-900 px-4 py-1.5 text-sm text-white dark:bg-zinc-50 dark:text-zinc-900"
+          className="rounded bg-primary px-4 py-1.5 text-sm text-on-dark"
         >
           Add staff
         </button>
@@ -66,16 +66,16 @@ export default async function StaffPage() {
         {staff.map((member) => (
           <li
             key={member.id}
-            className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950"
+            className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-ink/10 p-4"
           >
             <div>
-              <p className="font-medium text-zinc-900 dark:text-zinc-50">
+              <p className="font-medium text-ink">
                 {member.name}
                 {!member.active && (
-                  <span className="ml-2 text-xs text-zinc-500">deactivated</span>
+                  <span className="ml-2 text-xs text-ink/50">deactivated</span>
                 )}
                 {member.pinLocked && (
-                  <span className="ml-2 text-xs text-red-600">PIN locked</span>
+                  <span className="ml-2 text-xs text-alert-text">PIN locked</span>
                 )}
               </p>
             </div>
@@ -89,11 +89,11 @@ export default async function StaffPage() {
                   maxLength={4}
                   pattern="\d{4}"
                   inputMode="numeric"
-                  className="w-24 rounded border border-zinc-300 px-2 py-1 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+                  className="w-24 rounded border border-ink/20 bg-bg px-2 py-1 text-sm"
                 />
                 <button
                   type="submit"
-                  className="rounded border border-zinc-300 px-3 py-1 text-sm dark:border-zinc-700"
+                  className="rounded border border-secondary px-3 py-1 text-sm text-secondary hover:bg-secondary/10"
                 >
                   Reset PIN
                 </button>
@@ -103,7 +103,7 @@ export default async function StaffPage() {
                   <input type="hidden" name="staffId" value={member.id} />
                   <button
                     type="submit"
-                    className="rounded border border-red-300 px-3 py-1 text-sm text-red-700 dark:border-red-900 dark:text-red-400"
+                    className="rounded border border-error px-3 py-1 text-sm text-error hover:bg-error/10"
                   >
                     Deactivate
                   </button>
@@ -113,7 +113,7 @@ export default async function StaffPage() {
           </li>
         ))}
         {staff.length === 0 && (
-          <p className="text-sm text-zinc-500">No staff yet.</p>
+          <p className="text-sm text-ink/50">No staff yet.</p>
         )}
       </ul>
     </div>

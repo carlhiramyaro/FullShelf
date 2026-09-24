@@ -26,7 +26,7 @@ export default async function DevicesPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="mb-6 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
+      <h1 className="mb-6 text-2xl font-semibold text-ink">
         Shop devices
       </h1>
 
@@ -36,12 +36,12 @@ export default async function DevicesPage() {
         {devices.map((device) => (
           <li
             key={device.id}
-            className="flex items-center justify-between gap-3 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950"
+            className="flex items-center justify-between gap-3 rounded-lg border border-ink/10 p-4"
           >
-            <p className="text-zinc-900 dark:text-zinc-50">
+            <p className="text-ink">
               Device #{device.id}
               {device.revoked && (
-                <span className="ml-2 text-xs text-zinc-500">revoked</span>
+                <span className="ml-2 text-xs text-ink/50">revoked</span>
               )}
             </p>
             {!device.revoked && (
@@ -49,7 +49,7 @@ export default async function DevicesPage() {
                 <input type="hidden" name="deviceId" value={device.id} />
                 <button
                   type="submit"
-                  className="rounded border border-red-300 px-3 py-1 text-sm text-red-700 dark:border-red-900 dark:text-red-400"
+                  className="rounded border border-error px-3 py-1 text-sm text-error hover:bg-error/10"
                 >
                   Revoke
                 </button>
@@ -58,7 +58,7 @@ export default async function DevicesPage() {
           </li>
         ))}
         {devices.length === 0 && (
-          <p className="text-sm text-zinc-500">No devices paired yet.</p>
+          <p className="text-sm text-ink/50">No devices paired yet.</p>
         )}
       </ul>
     </div>
