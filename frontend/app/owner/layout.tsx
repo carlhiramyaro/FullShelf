@@ -20,6 +20,9 @@ export default function OwnerLayout({
         <Link href="/owner/stock" className="hover:text-primary">
           Opening stock
         </Link>
+        <Link href="/owner/stock/receive" className="hover:text-primary">
+          Receive stock
+        </Link>
       </nav>
       {children}
     </div>
