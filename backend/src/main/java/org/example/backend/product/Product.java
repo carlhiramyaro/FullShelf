@@ -37,6 +37,9 @@ public class Product {
     @Column(name = "carton_weight", precision = 10, scale = 2)
     private BigDecimal cartonWeight;
 
+    @Column(nullable = false)
+    private boolean active = true;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -92,6 +95,14 @@ public class Product {
 
     public void setCartonWeight(BigDecimal cartonWeight) {
         this.cartonWeight = cartonWeight;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 
     public Instant getCreatedAt() {
