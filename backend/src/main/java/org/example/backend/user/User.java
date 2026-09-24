@@ -36,6 +36,12 @@ public class User {
     @Column(nullable = false)
     private boolean active = true;
 
+    @Column(name = "failed_pin_attempts", nullable = false)
+    private int failedPinAttempts = 0;
+
+    @Column(name = "pin_locked", nullable = false)
+    private boolean pinLocked = false;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -89,6 +95,22 @@ public class User {
 
     public void setActive(boolean active) {
         this.active = active;
+    }
+
+    public int getFailedPinAttempts() {
+        return failedPinAttempts;
+    }
+
+    public void setFailedPinAttempts(int failedPinAttempts) {
+        this.failedPinAttempts = failedPinAttempts;
+    }
+
+    public boolean isPinLocked() {
+        return pinLocked;
+    }
+
+    public void setPinLocked(boolean pinLocked) {
+        this.pinLocked = pinLocked;
     }
 
     public Instant getCreatedAt() {
