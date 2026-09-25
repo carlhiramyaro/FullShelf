@@ -24,4 +24,8 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
     List<Sale> findByCreatedAtGreaterThanEqualOrderByCreatedAtDesc(Instant from);
 
     List<Sale> findAllByOrderByCreatedAtDesc();
+
+    // Day close's closed range, unlike the open-ended "since" query above —
+    // a picked day has both a start and an end, today doesn't.
+    List<Sale> findByCreatedAtGreaterThanEqualAndCreatedAtLessThanOrderByCreatedAtDesc(Instant from, Instant to);
 }

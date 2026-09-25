@@ -5,6 +5,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
@@ -50,6 +52,34 @@ public class SaleQueryService {
         return new SaleTotals(expectedCash.add(discounts), discounts, expectedCash);
     }
 
+    // Day close's list for a picked date. A separate DaySaleSummary rather
+    // than SaleSummary, since Day close needs a per-sale discount figure and
+    // SaleSummary deliberately doesn't carry one (Dashboard's decision doc:
+    // widening it would touch the staff/owner sales-list consumers for a
+    // field neither needs).
+    @Transactional(readOnly = true)
+    public List<DaySaleSummary> listForDay(LocalDate date) {
+        Instant from = startOfDay(date);
+        Instant to = startOfDay(date.plusDays(1));
+        return saleRepository.findByCreatedAtGreaterThanEqualAndCreatedAtLessThanOrderByCreatedAtDesc(from, to)
+                .stream()
+                .map(sale -> new DaySaleSummary(sale.getReceiptNumber(), sale.getCreatedAt(),
+                        sale.getStaff().getName(), saleLineRepository.sumLineTotalBySaleId(sale.getId()),
+                        saleLineRepository.sumDiscountBySaleId(sale.getId()), sale.isVoided()))
+                .toList();
+    }
+
+    // Day close's totals for a picked date — same derivation as
+    // todayTotals(), just over a closed range instead of "since now."
+    @Transactional(readOnly = true)
+    public SaleTotals dayTotals(LocalDate date) {
+        Instant from = startOfDay(date);
+        Instant to = startOfDay(date.plusDays(1));
+        BigDecimal expectedCash = saleLineRepository.sumLineTotalBetween(from, to);
+        BigDecimal discounts = saleLineRepository.sumDiscountBetween(from, to);
+        return new SaleTotals(expectedCash.add(discounts), discounts, expectedCash);
+    }
+
     @Transactional(readOnly = true)
     public SaleDetail findByReceiptNumber(Long receiptNumber) {
         Sale sale = saleRepository.findByReceiptNumber(receiptNumber)
@@ -71,6 +101,12 @@ public class SaleQueryService {
         return Instant.now().truncatedTo(ChronoUnit.DAYS);
     }
 
+    // Same Accra-is-UTC simplification as startOfToday(), generalized to an
+    // arbitrary picked date for Day close.
+    private Instant startOfDay(LocalDate date) {
+        return date.atStartOfDay(ZoneOffset.UTC).toInstant();
+    }
+
     private List<SaleSummary> summarize(List<Sale> sales) {
         return sales.stream()
                 .map(sale -> new SaleSummary(sale.getReceiptNumber(), sale.getCreatedAt(),
@@ -88,6 +124,10 @@ public class SaleQueryService {
     }
 
     public record SaleTotals(BigDecimal grossSales, BigDecimal discounts, BigDecimal expectedCash) {
+    }
+
+    public record DaySaleSummary(Long receiptNumber, Instant createdAt, String staffName, BigDecimal total,
+                                  BigDecimal discount, boolean voided) {
     }
 
     public record SaleLineDetail(Long productId, String productName, String unit, BigDecimal quantity,

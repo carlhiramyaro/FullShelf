@@ -1,5 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { API_BASE_URL } from "@/lib/api";
+import { formatCash } from "@/lib/format";
+import StatTile from "./_components/StatTile";
 
 type StockLevel = {
   productId: number;
@@ -33,19 +35,6 @@ async function fetchDashboard(): Promise<DashboardSummary> {
 
 function unitLabel(unit: StockLevel["unit"]) {
   return unit === "KG" ? "kg" : "units";
-}
-
-function formatCash(amount: number) {
-  return `GH₵ ${amount.toFixed(2)}`;
-}
-
-function StatTile({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-lg border border-ink/10 bg-bg p-4">
-      <p className="text-xs text-ink/60">{label}</p>
-      <p className="mt-1 text-2xl font-semibold text-primary">{value}</p>
-    </div>
-  );
 }
 
 // mvp.md's Dashboard — the owner's landing screen. Reuses the same

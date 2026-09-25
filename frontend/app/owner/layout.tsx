@@ -38,6 +38,9 @@ export default function OwnerLayout({
         <Link href="/owner/sales" className="hover:text-primary">
           Sales
         </Link>
+        <Link href="/owner/day-close" className="hover:text-primary">
+          Day close
+        </Link>
       </nav>
       {children}
     </div>
