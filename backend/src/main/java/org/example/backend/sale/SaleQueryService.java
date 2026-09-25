@@ -39,6 +39,17 @@ public class SaleQueryService {
         return summarize(saleRepository.findAllByOrderByCreatedAtDesc());
     }
 
+    // Dashboard's sales/discounts/expected-cash figures. Gross sales isn't
+    // stored anywhere (SaleLine only has the net lineTotal), so it's derived
+    // as expectedCash + discounts rather than added as a new column — same
+    // "no cached derived value" convention as everything else in this app.
+    @Transactional(readOnly = true)
+    public SaleTotals todayTotals() {
+        BigDecimal expectedCash = saleLineRepository.sumLineTotalSince(startOfToday());
+        BigDecimal discounts = saleLineRepository.sumDiscountSince(startOfToday());
+        return new SaleTotals(expectedCash.add(discounts), discounts, expectedCash);
+    }
+
     @Transactional(readOnly = true)
     public SaleDetail findByReceiptNumber(Long receiptNumber) {
         Sale sale = saleRepository.findByReceiptNumber(receiptNumber)
@@ -74,6 +85,9 @@ public class SaleQueryService {
 
     public record SaleDetail(Long receiptNumber, Instant createdAt, String staffName, boolean voided,
                               BigDecimal total, List<SaleLineDetail> lines) {
+    }
+
+    public record SaleTotals(BigDecimal grossSales, BigDecimal discounts, BigDecimal expectedCash) {
     }
 
     public record SaleLineDetail(Long productId, String productName, String unit, BigDecimal quantity,

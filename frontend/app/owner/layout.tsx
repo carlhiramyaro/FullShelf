@@ -8,6 +8,9 @@ export default function OwnerLayout({
   return (
     <div className="min-h-screen bg-bg p-8">
       <nav className="mb-8 flex gap-6 text-sm font-medium text-secondary">
+        <Link href="/owner" className="hover:text-primary">
+          Dashboard
+        </Link>
         <Link href="/owner/staff" className="hover:text-primary">
           Staff
         </Link>

@@ -31,7 +31,10 @@ public class StockLevelController {
 
     public record StockLevelResponse(Long productId, String name, String unit, BigDecimal currentBalance,
                                       BigDecimal alertLevel, StockLevelStatus status) {
-        static StockLevelResponse from(StockLevelService.ProductStockLevel level) {
+        // Public: DashboardController reuses this to shape its own
+        // lowStock/negativeStock arrays from the same StockLevelService
+        // data, rather than a second near-identical response record.
+        public static StockLevelResponse from(StockLevelService.ProductStockLevel level) {
             Product product = level.product();
             return new StockLevelResponse(product.getId(), product.getName(), product.getUnit().name(),
                     level.currentBalance(), product.getAlertLevel(), level.status());
