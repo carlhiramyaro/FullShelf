@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { API_BASE_URL } from "@/lib/api";
+import SalesScreen from "./SalesScreen";
 
 const DEVICE_TOKEN_KEY = "fullshelf_device_token";
 const STAFF_SESSION_KEY = "fullshelf_staff_session";
@@ -339,22 +340,5 @@ function ServingScreen({
   staff: RosterEntry;
   onSwitchUser: () => void;
 }) {
-  return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-bg p-6">
-      <p className="text-sm text-ink/50">Serving</p>
-      <h1 className="text-3xl font-semibold text-ink">
-        {staff.name}
-      </h1>
-      <p className="max-w-sm text-center text-sm text-ink/50">
-        The sales screen lands in a later slice — this confirms the login and
-        idle-lock flow.
-      </p>
-      <button
-        onClick={onSwitchUser}
-        className="rounded border border-secondary px-4 py-2 text-sm text-secondary hover:bg-secondary/10"
-      >
-        Switch user
-      </button>
-    </div>
-  );
+  return <SalesScreen staff={staff} onSwitchUser={onSwitchUser} />;
 }
