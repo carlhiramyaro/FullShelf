@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
 import { API_BASE_URL } from "@/lib/api";
+import VoidSaleForm from "./VoidSaleForm";
 
 type SaleLineDetail = {
   productId: number;
@@ -86,7 +87,9 @@ export default async function OwnerSaleDetailPage({
         </table>
       </div>
 
-      <p className="text-right text-lg font-semibold text-ink">Total: GH₵{sale.total.toFixed(2)}</p>
+      <p className="mb-6 text-right text-lg font-semibold text-ink">Total: GH₵{sale.total.toFixed(2)}</p>
+
+      {!sale.voided && <VoidSaleForm receiptNumber={sale.receiptNumber} />}
     </div>
   );
 }
