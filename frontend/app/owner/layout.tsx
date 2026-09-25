@@ -29,6 +29,9 @@ export default function OwnerLayout({
         <Link href="/owner/stock/reverse" className="hover:text-primary">
           Reverse entry
         </Link>
+        <Link href="/owner/sales" className="hover:text-primary">
+          Sales
+        </Link>
       </nav>
       {children}
     </div>

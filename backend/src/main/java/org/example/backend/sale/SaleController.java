@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,9 +28,11 @@ import java.util.List;
 public class SaleController {
 
     private final SaleService saleService;
+    private final SaleQueryService saleQueryService;
 
-    public SaleController(SaleService saleService) {
+    public SaleController(SaleService saleService, SaleQueryService saleQueryService) {
         this.saleService = saleService;
+        this.saleQueryService = saleQueryService;
     }
 
     @GetMapping
@@ -44,6 +47,25 @@ public class SaleController {
                 .map(line -> new SaleService.LineRequest(line.productId(), line.quantity(), line.discount()))
                 .toList();
         return SaleResponse.from(saleService.confirmSale(lines, staff.userId()));
+    }
+
+    // "Staff see today's sales only" (mvp.md) — SaleQueryService.listToday()
+    // already scopes this, so no extra filtering needed here.
+    @GetMapping("/today")
+    public List<SaleQueryService.SaleSummary> today() {
+        return saleQueryService.listToday();
+    }
+
+    // Scoped to today the same way: a receipt from an earlier day 404s here
+    // even though it exists, rather than letting a staff session browse
+    // arbitrary past receipts by guessing numbers.
+    @GetMapping("/{receiptNumber}")
+    public SaleQueryService.SaleDetail receipt(@PathVariable Long receiptNumber) {
+        SaleQueryService.SaleDetail detail = saleQueryService.findByReceiptNumber(receiptNumber);
+        if (detail.createdAt().isBefore(saleQueryService.startOfToday())) {
+            throw new IllegalArgumentException("No sale with receipt number " + receiptNumber);
+        }
+        return detail;
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { API_BASE_URL } from "@/lib/api";
+import ReceiptView, { ReceiptData } from "./ReceiptView";
+import TodaysSalesScreen from "./TodaysSalesScreen";
 
 const STAFF_SESSION_KEY = "fullshelf_staff_session";
 
@@ -15,17 +17,6 @@ type CartLine = {
   quantity: number;
   discount: string;
 };
-
-type ReceiptLine = {
-  productName: string;
-  quantity: number;
-  unit: string;
-  unitPrice: number;
-  discount: number;
-  lineTotal: number;
-};
-
-type Receipt = { receiptNumber: number; total: number; lines: ReceiptLine[] };
 
 async function errorMessage(res: Response, fallback: string): Promise<string> {
   const body = await res.json().catch(() => null);
@@ -52,7 +43,8 @@ export default function SalesScreen({
   const [cart, setCart] = useState<CartLine[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [receipt, setReceipt] = useState<Receipt | null>(null);
+  const [receipt, setReceipt] = useState<ReceiptData | null>(null);
+  const [showTodaysSales, setShowTodaysSales] = useState(false);
 
   useEffect(() => {
     fetch(`${API_BASE_URL}/api/staff/sales`, { headers: sessionHeaders() }).then(async (res) => {
@@ -119,7 +111,7 @@ export default function SalesScreen({
       if (!res.ok) {
         throw new Error(await errorMessage(res, "Could not save the sale"));
       }
-      setReceipt((await res.json()) as Receipt);
+      setReceipt((await res.json()) as ReceiptData);
       setCart([]);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not save the sale");
@@ -128,31 +120,28 @@ export default function SalesScreen({
     }
   }
 
+  if (showTodaysSales) {
+    return <TodaysSalesScreen onBack={() => setShowTodaysSales(false)} onSwitchUser={onSwitchUser} />;
+  }
+
   if (receipt) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-bg p-6">
-        <p className="text-sm text-ink/50">Receipt #{receipt.receiptNumber}</p>
-        <p className="text-5xl font-bold text-primary">GH₵{receipt.total.toFixed(2)}</p>
-        <ul className="w-full max-w-sm text-sm text-ink/70">
-          {receipt.lines.map((line, i) => (
-            <li key={i} className="flex justify-between border-b border-ink/10 py-1">
-              <span>
-                {line.productName} × {line.quantity}
-              </span>
-              <span>GH₵{line.lineTotal.toFixed(2)}</span>
-            </li>
-          ))}
-        </ul>
-        <button
-          onClick={() => setReceipt(null)}
-          className="rounded bg-primary px-4 py-2 text-on-dark"
-        >
-          New sale
-        </button>
-        <button onClick={onSwitchUser} className="text-sm text-secondary underline">
-          Switch user
-        </button>
-      </div>
+      <ReceiptView
+        receipt={receipt}
+        footer={
+          <>
+            <button
+              onClick={() => setReceipt(null)}
+              className="rounded bg-primary px-4 py-2 text-on-dark"
+            >
+              New sale
+            </button>
+            <button onClick={onSwitchUser} className="text-sm text-secondary underline">
+              Switch user
+            </button>
+          </>
+        }
+      />
     );
   }
 
@@ -162,9 +151,14 @@ export default function SalesScreen({
         <p className="text-sm text-ink/50">
           Serving: <span className="font-medium text-ink">{staff.name}</span>
         </p>
-        <button onClick={onSwitchUser} className="text-sm text-secondary underline">
-          Switch user
-        </button>
+        <div className="flex items-center gap-4">
+          <button onClick={() => setShowTodaysSales(true)} className="text-sm text-secondary underline">
+            Today&apos;s sales
+          </button>
+          <button onClick={onSwitchUser} className="text-sm text-secondary underline">
+            Switch user
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
