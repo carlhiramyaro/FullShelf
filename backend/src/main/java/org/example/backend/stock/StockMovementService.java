@@ -3,6 +3,7 @@ package org.example.backend.stock;
 import org.example.backend.product.Product;
 import org.example.backend.sale.SaleLine;
 import org.example.backend.user.User;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,7 +15,9 @@ import java.util.Set;
  * Owns every write to the stock ledger. Opening stock, receive stock, sale
  * and write-off all call {@link #record}; void and reverse-entry both call
  * {@link #reverse} — the one primitive the build plan calls out as shared
- * between them.
+ * between them. Every write also publishes a {@link StockMovementRecorded}
+ * event so crossing-detection (StockCrossingListener) hangs off this one
+ * choke point rather than needing a call added at each of its six callers.
  */
 @Service
 public class StockMovementService {
@@ -23,9 +26,12 @@ public class StockMovementService {
             StockMovementType.VOID, StockMovementType.REVERSAL);
 
     private final StockMovementRepository stockMovementRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public StockMovementService(StockMovementRepository stockMovementRepository) {
+    public StockMovementService(StockMovementRepository stockMovementRepository,
+                                 ApplicationEventPublisher eventPublisher) {
         this.stockMovementRepository = stockMovementRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -34,7 +40,9 @@ public class StockMovementService {
         StockMovement movement = new StockMovement(product, signedQuantity, type, performedBy);
         movement.setSaleLine(saleLine);
         movement.setNote(note);
-        return stockMovementRepository.save(movement);
+        StockMovement saved = stockMovementRepository.save(movement);
+        eventPublisher.publishEvent(new StockMovementRecorded(product, type));
+        return saved;
     }
 
     /**
@@ -57,6 +65,8 @@ public class StockMovementService {
         reversal.setReversedMovement(original);
         reversal.setSaleLine(original.getSaleLine());
         reversal.setNote(note);
-        return stockMovementRepository.save(reversal);
+        StockMovement saved = stockMovementRepository.save(reversal);
+        eventPublisher.publishEvent(new StockMovementRecorded(original.getProduct(), reversalType));
+        return saved;
     }
 }

@@ -32,19 +32,10 @@ public class StockLevelService {
                 .filter(Product::isActive)
                 .map(product -> {
                     BigDecimal balance = stockBalanceService.currentBalance(product.getId());
-                    return new ProductStockLevel(product, balance, bucket(balance, product.getAlertLevel()));
+                    return new ProductStockLevel(product, balance,
+                            StockLevelStatus.forBalance(balance, product.getAlertLevel()));
                 })
                 .toList();
-    }
-
-    private StockLevelStatus bucket(BigDecimal balance, BigDecimal alertLevel) {
-        if (balance.signum() < 0) {
-            return StockLevelStatus.NEGATIVE;
-        }
-        if (balance.compareTo(alertLevel) <= 0) {
-            return StockLevelStatus.LOW;
-        }
-        return StockLevelStatus.OK;
     }
 
     public record ProductStockLevel(Product product, BigDecimal currentBalance, StockLevelStatus status) {
