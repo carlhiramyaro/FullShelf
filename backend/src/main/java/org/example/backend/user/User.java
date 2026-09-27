@@ -33,6 +33,9 @@ public class User {
     @Column(name = "clerk_user_id", unique = true)
     private String clerkUserId;
 
+    @Column(name = "phone_number", length = 20)
+    private String phoneNumber;
+
     @Column(nullable = false)
     private boolean active = true;
 
@@ -87,6 +90,14 @@ public class User {
 
     public void setClerkUserId(String clerkUserId) {
         this.clerkUserId = clerkUserId;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
     }
 
     public boolean isActive() {

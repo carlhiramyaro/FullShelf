@@ -8,11 +8,13 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -74,5 +76,33 @@ class OwnerControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Aunt Amerley"))
                 .andExpect(jsonPath("$.role").value("OWNER"));
+    }
+
+    @Test
+    void ownerCanSetHerPhoneNumberInInternationalFormat() throws Exception {
+        User owner = new User("Aunt Amerley", UserRole.OWNER);
+        owner.setClerkUserId("clerk_owner_2");
+        userRepository.save(owner);
+
+        mockMvc.perform(post("/api/owner/me/phone")
+                        .with(jwt().jwt(jwt -> jwt.subject("clerk_owner_2")).authorities(ownerJwtAuthoritiesConverter))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"phoneNumber\":\"+233241234567\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.phoneNumber").value("+233241234567"));
+    }
+
+    @Test
+    void rejectsAPhoneNumberNotInInternationalFormat() throws Exception {
+        User owner = new User("Aunt Amerley", UserRole.OWNER);
+        owner.setClerkUserId("clerk_owner_3");
+        userRepository.save(owner);
+
+        mockMvc.perform(post("/api/owner/me/phone")
+                        .with(jwt().jwt(jwt -> jwt.subject("clerk_owner_3")).authorities(ownerJwtAuthoritiesConverter))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"phoneNumber\":\"0241234567\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").exists());
     }
 }
