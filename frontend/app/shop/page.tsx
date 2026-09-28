@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { API_BASE_URL } from "@/lib/api";
+import { DEVICE_TOKEN_KEY } from "@/lib/deviceToken";
 import SalesScreen from "./SalesScreen";
 
-const DEVICE_TOKEN_KEY = "fullshelf_device_token";
 const STAFF_SESSION_KEY = "fullshelf_staff_session";
 const IDLE_LOCK_MS = 2 * 60 * 1000;
 
