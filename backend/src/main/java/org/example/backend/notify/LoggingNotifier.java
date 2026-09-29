@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * The default Notifier bean everywhere app.sms.enabled isn't explicitly
- * "true" (i.e. local dev, and any environment without real Twilio
+ * "true" (i.e. local dev, and any environment without real Arkesel
  * credentials configured yet) — see SmsNotifier for the real one.
  */
 @Component

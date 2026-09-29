@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
  * LoggingNotifier) is wired into this test's context. The gateway itself is
  * swapped for a hand-rolled recording fake via @TestConfiguration/@Primary —
  * same pattern StockCrossingIntegrationTest uses for Notifier — so no test
- * here ever calls out to real Twilio.
+ * here ever calls out to real Arkesel.
  */
 @SpringBootTest
 @Transactional
