@@ -42,7 +42,7 @@ public class SmsNotifier implements Notifier {
 
     @Override
     public void send(String message) {
-        List<User> owners = userRepository.findByRoleOrderByName(UserRole.OWNER);
+        List<User> owners = userRepository.findByRoleAndActiveTrueOrderByName(UserRole.OWNER);
         if (owners.isEmpty()) {
             log.warn("No owner account exists yet — dropping alert: {}", message);
             return;
