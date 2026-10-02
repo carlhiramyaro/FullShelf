@@ -3,6 +3,7 @@ package org.example.backend.notify;
 import org.example.backend.user.User;
 import org.example.backend.user.UserRepository;
 import org.example.backend.user.UserRole;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -39,6 +40,12 @@ class SmsNotifierIntegrationTest {
     @Autowired
     private RecordingSmsGateway smsGateway;
 
+    @BeforeEach
+    void resetGateway() {
+        smsGateway.sent.clear();
+        smsGateway.failNext = false;
+    }
+
     @Test
     void sendsToTheOwnersConfiguredPhoneNumber() {
         User owner = new User("Aunt Amerley", UserRole.OWNER);
@@ -50,6 +57,22 @@ class SmsNotifierIntegrationTest {
         assertThat(smsGateway.sent).hasSize(1);
         assertThat(smsGateway.sent.get(0).to()).isEqualTo("+233241234567");
         assertThat(smsGateway.sent.get(0).body()).isEqualTo("Chicken is at 5.00 KG (alert level 10.00)");
+    }
+
+    @Test
+    void ignoresADeactivatedOwnerEvenIfItSortsFirstAndHasAPhoneNumber() {
+        User stale = new User("Aaa stale owner", UserRole.OWNER);
+        stale.setPhoneNumber("+233200000000");
+        stale.setActive(false);
+        userRepository.save(stale);
+        User owner = new User("Aunt Amerley", UserRole.OWNER);
+        owner.setPhoneNumber("+233241234567");
+        userRepository.save(owner);
+
+        smsNotifier.send("Chicken is at 5.00 KG (alert level 10.00)");
+
+        assertThat(smsGateway.sent).hasSize(1);
+        assertThat(smsGateway.sent.get(0).to()).isEqualTo("+233241234567");
     }
 
     @Test
