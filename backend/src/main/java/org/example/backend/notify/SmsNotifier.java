@@ -1,5 +1,6 @@
 package org.example.backend.notify;
 
+import org.example.backend.shop.Shop;
 import org.example.backend.user.User;
 import org.example.backend.user.UserRepository;
 import org.example.backend.user.UserRole;
@@ -41,16 +42,16 @@ public class SmsNotifier implements Notifier {
     }
 
     @Override
-    public void send(String message) {
-        List<User> owners = userRepository.findByRoleAndActiveTrueOrderByName(UserRole.OWNER);
+    public void send(Shop shop, String message) {
+        List<User> owners = userRepository.findByShopAndRoleAndActiveTrueOrderByName(shop, UserRole.OWNER);
         if (owners.isEmpty()) {
-            log.warn("No owner account exists yet — dropping alert: {}", message);
+            log.warn("No active owner for shop {} — dropping alert: {}", shop.getName(), message);
             return;
         }
 
         String phoneNumber = owners.get(0).getPhoneNumber();
         if (phoneNumber == null || phoneNumber.isBlank()) {
-            log.warn("Owner has no phone number set (see /owner/settings) — dropping alert: {}", message);
+            log.warn("Owner of shop {} has no phone number set (see /owner/settings) — dropping alert: {}", shop.getName(), message);
             return;
         }
 

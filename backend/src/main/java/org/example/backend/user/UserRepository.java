@@ -20,11 +20,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     List<User> findByShopAndRoleAndActiveTrueOrderByName(Shop shop, UserRole role);
 
-    // Still unscoped on purpose: OwnerBootstrapRunner (deleted in G7) and
-    // SmsNotifier (G5) call these.
+    // Still unscoped on purpose: OwnerBootstrapRunner (deleted in G7) and its
+    // test call these.
     List<User> findByRoleOrderByName(UserRole role);
-
-    List<User> findByRoleAndActiveTrueOrderByName(UserRole role);
 
     List<User> findByRoleAndActiveTrueOrderByIdAsc(UserRole role);
 }

@@ -51,8 +51,8 @@ public class SaleQueryService {
     // "no cached derived value" convention as everything else in this app.
     @Transactional(readOnly = true)
     public SaleTotals todayTotals() {
-        BigDecimal expectedCash = saleLineRepository.sumLineTotalSince(startOfToday());
-        BigDecimal discounts = saleLineRepository.sumDiscountSince(startOfToday());
+        BigDecimal expectedCash = saleLineRepository.sumLineTotalSince(currentShop.get(), startOfToday());
+        BigDecimal discounts = saleLineRepository.sumDiscountSince(currentShop.get(), startOfToday());
         return new SaleTotals(expectedCash.add(discounts), discounts, expectedCash);
     }
 
@@ -79,8 +79,8 @@ public class SaleQueryService {
     public SaleTotals dayTotals(LocalDate date) {
         Instant from = startOfDay(date);
         Instant to = startOfDay(date.plusDays(1));
-        BigDecimal expectedCash = saleLineRepository.sumLineTotalBetween(from, to);
-        BigDecimal discounts = saleLineRepository.sumDiscountBetween(from, to);
+        BigDecimal expectedCash = saleLineRepository.sumLineTotalBetween(currentShop.get(), from, to);
+        BigDecimal discounts = saleLineRepository.sumDiscountBetween(currentShop.get(), from, to);
         return new SaleTotals(expectedCash.add(discounts), discounts, expectedCash);
     }
 
