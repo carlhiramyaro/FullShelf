@@ -1,5 +1,9 @@
 package org.example.backend.user;
 
+import org.example.backend.shop.Shop;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -48,12 +52,21 @@ public class User {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "shop_id", nullable = false, updatable = false)
+    private Shop shop;
+
     protected User() {
     }
 
-    public User(String name, UserRole role) {
+    public User(Shop shop, String name, UserRole role) {
+        this.shop = shop;
         this.name = name;
         this.role = role;
+    }
+
+    public Shop getShop() {
+        return shop;
     }
 
     public Long getId() {

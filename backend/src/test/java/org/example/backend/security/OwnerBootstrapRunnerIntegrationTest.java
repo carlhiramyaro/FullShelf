@@ -1,5 +1,7 @@
 package org.example.backend.security;
 
+import org.example.backend.shop.CurrentShop;
+import org.example.backend.shop.TestShops;
 import org.example.backend.user.User;
 import org.example.backend.user.UserRepository;
 import org.example.backend.user.UserRole;
@@ -28,8 +30,11 @@ class OwnerBootstrapRunnerIntegrationTest {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private CurrentShop currentShop;
+
     private void runBootstrap() {
-        new OwnerBootstrapRunner(userRepository, NEW_ID).run(null);
+        new OwnerBootstrapRunner(userRepository, currentShop, NEW_ID).run(null);
     }
 
     private List<User> activeOwners() {
@@ -38,10 +43,10 @@ class OwnerBootstrapRunnerIntegrationTest {
 
     @Test
     void deactivatesOtherOwnersWhenTheConfiguredOneAlreadyExists() {
-        User configured = new User("Owner", UserRole.OWNER);
+        User configured = new User(TestShops.ONE, "Owner", UserRole.OWNER);
         configured.setClerkUserId(NEW_ID);
         userRepository.save(configured);
-        User stale = new User("Owner", UserRole.OWNER);
+        User stale = new User(TestShops.ONE, "Owner", UserRole.OWNER);
         stale.setClerkUserId("user_bootstrap_test_stale");
         userRepository.save(stale);
 
@@ -53,7 +58,7 @@ class OwnerBootstrapRunnerIntegrationTest {
 
     @Test
     void relinksTheExistingOwnerInsteadOfInsertingASecondOneAndClearsItsPhone() {
-        User previous = new User("Owner", UserRole.OWNER);
+        User previous = new User(TestShops.ONE, "Owner", UserRole.OWNER);
         previous.setClerkUserId("user_bootstrap_test_previous");
         previous.setPhoneNumber("+233241234567");
         userRepository.save(previous);

@@ -1,5 +1,10 @@
 package org.example.backend.stock;
 
+import org.example.backend.product.Product;
+import org.example.backend.shop.Shop;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -30,11 +35,16 @@ public class StockAlert {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "shop_id", nullable = false, updatable = false)
+    private Shop shop;
+
     protected StockAlert() {
     }
 
-    public StockAlert(Long productId) {
-        this.productId = productId;
+    public StockAlert(Product product) {
+        this.productId = product.getId();
+        this.shop = product.getShop();
         this.active = false;
         this.updatedAt = Instant.now();
     }

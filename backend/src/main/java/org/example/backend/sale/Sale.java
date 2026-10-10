@@ -1,5 +1,6 @@
 package org.example.backend.sale;
 
+import org.example.backend.shop.Shop;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -22,9 +23,9 @@ public class Sale {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Assigned by the DB sequence default (sale_receipt_number_seq); not set on
-    // insert from the Java side, so re-read the entity after saving to see it.
-    @Column(name = "receipt_number", insertable = false, updatable = false)
+    // Per-shop number from ShopRepository.nextReceiptNumber; unique together
+    // with shop_id, not on its own.
+    @Column(name = "receipt_number", nullable = false, updatable = false)
     private Long receiptNumber;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -37,11 +38,21 @@ public class Sale {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "shop_id", nullable = false, updatable = false)
+    private Shop shop;
+
     protected Sale() {
     }
 
-    public Sale(User staff) {
+    public Sale(User staff, Long receiptNumber) {
         this.staff = staff;
+        this.shop = staff.getShop();
+        this.receiptNumber = receiptNumber;
+    }
+
+    public Shop getShop() {
+        return shop;
     }
 
     public Long getId() {

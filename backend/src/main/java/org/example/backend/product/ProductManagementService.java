@@ -1,5 +1,6 @@
 package org.example.backend.product;
 
+import org.example.backend.shop.CurrentShop;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,9 +17,11 @@ import java.util.List;
 public class ProductManagementService {
 
     private final ProductRepository productRepository;
+    private final CurrentShop currentShop;
 
-    public ProductManagementService(ProductRepository productRepository) {
+    public ProductManagementService(ProductRepository productRepository, CurrentShop currentShop) {
         this.productRepository = productRepository;
+        this.currentShop = currentShop;
     }
 
     @Transactional
@@ -28,7 +31,7 @@ public class ProductManagementService {
         if (productRepository.existsByNameIgnoreCase(name)) {
             throw new IllegalArgumentException("A product named \"" + name + "\" already exists");
         }
-        Product product = new Product(name, unit, price, alertLevel);
+        Product product = new Product(currentShop.get(), name, unit, price, alertLevel);
         product.setCartonWeight(cartonWeight);
         return productRepository.save(product);
     }

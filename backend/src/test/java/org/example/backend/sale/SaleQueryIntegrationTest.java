@@ -1,5 +1,6 @@
 package org.example.backend.sale;
 
+import org.example.backend.shop.TestShops;
 import jakarta.persistence.EntityManager;
 import org.example.backend.product.Product;
 import org.example.backend.product.ProductRepository;
@@ -67,8 +68,8 @@ class SaleQueryIntegrationTest {
 
     @Test
     void listsTodaysSaleForBothRolesAndReturnsItsDetail() {
-        User staff = userRepository.save(new User("Sale Query Test Staff", UserRole.STAFF));
-        Product chicken = productRepository.save(new Product(
+        User staff = userRepository.save(new User(TestShops.ONE, "Sale Query Test Staff", UserRole.STAFF));
+        Product chicken = productRepository.save(new Product(TestShops.ONE,
                 "Sale Query Test Chicken", ProductUnit.KG, new BigDecimal("45.00"), new BigDecimal("10.00")));
 
         SaleService.SaleResult result = saleService.confirmSale(List.of(
@@ -102,8 +103,8 @@ class SaleQueryIntegrationTest {
 
     @Test
     void excludesAnOlderSaleFromTodayButNotFromListAll() {
-        User staff = userRepository.save(new User("Sale Query Test Staff", UserRole.STAFF));
-        Product oil = productRepository.save(new Product(
+        User staff = userRepository.save(new User(TestShops.ONE, "Sale Query Test Staff", UserRole.STAFF));
+        Product oil = productRepository.save(new Product(TestShops.ONE,
                 "Sale Query Test Oil", ProductUnit.UNIT, new BigDecimal("25.00"), new BigDecimal("5.00")));
 
         SaleService.SaleResult result = saleService.confirmSale(

@@ -1,5 +1,6 @@
 package org.example.backend.sale;
 
+import org.example.backend.shop.ShopRepository;
 import org.example.backend.product.Product;
 import org.example.backend.product.ProductRepository;
 import org.example.backend.product.ProductUnit;
@@ -31,15 +32,17 @@ public class SaleService {
     private final SaleRepository saleRepository;
     private final SaleLineRepository saleLineRepository;
     private final StockMovementService stockMovementService;
+    private final ShopRepository shopRepository;
 
     public SaleService(ProductRepository productRepository, UserRepository userRepository,
                         SaleRepository saleRepository, SaleLineRepository saleLineRepository,
-                        StockMovementService stockMovementService) {
+                        StockMovementService stockMovementService, ShopRepository shopRepository) {
         this.productRepository = productRepository;
         this.userRepository = userRepository;
         this.saleRepository = saleRepository;
         this.saleLineRepository = saleLineRepository;
         this.stockMovementService = stockMovementService;
+        this.shopRepository = shopRepository;
     }
 
     public List<Product> listSaleableProducts() {
@@ -59,7 +62,8 @@ public class SaleService {
         // batch, where a blank line is just skipped).
         List<ResolvedLine> resolvedLines = lines.stream().map(this::resolveLine).toList();
 
-        Sale sale = saleRepository.save(new Sale(staff));
+        Long receiptNumber = shopRepository.nextReceiptNumber(staff.getShop().getId());
+        Sale sale = saleRepository.save(new Sale(staff, receiptNumber));
 
         List<LineResult> lineResults = new ArrayList<>();
         for (ResolvedLine resolved : resolvedLines) {
@@ -71,8 +75,6 @@ public class SaleService {
                     resolved.discount(), resolved.lineTotal()));
         }
 
-        saleRepository.flush();
-        Long receiptNumber = saleRepository.findReceiptNumberById(sale.getId());
         BigDecimal total = lineResults.stream().map(LineResult::lineTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
         return new SaleResult(sale, staff, receiptNumber, lineResults, total);
     }

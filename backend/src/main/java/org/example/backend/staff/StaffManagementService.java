@@ -1,5 +1,6 @@
 package org.example.backend.staff;
 
+import org.example.backend.shop.CurrentShop;
 import org.example.backend.user.User;
 import org.example.backend.user.UserRepository;
 import org.example.backend.user.UserRole;
@@ -24,16 +25,19 @@ public class StaffManagementService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final CurrentShop currentShop;
 
-    public StaffManagementService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public StaffManagementService(UserRepository userRepository, PasswordEncoder passwordEncoder,
+                                   CurrentShop currentShop) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.currentShop = currentShop;
     }
 
     @Transactional
     public User createStaff(String name, String pin) {
         validatePin(pin);
-        User staff = new User(name, UserRole.STAFF);
+        User staff = new User(currentShop.get(), name, UserRole.STAFF);
         staff.setPinHash(passwordEncoder.encode(pin));
         return userRepository.save(staff);
     }

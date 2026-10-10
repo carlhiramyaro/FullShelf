@@ -38,7 +38,7 @@ public class StockCrossingListener {
     public void onStockMovementRecorded(StockMovementRecorded event) {
         Product product = event.product();
         StockAlert alert = stockAlertRepository.findById(product.getId())
-                .orElseGet(() -> new StockAlert(product.getId()));
+                .orElseGet(() -> new StockAlert(product));
 
         if (event.type() == StockMovementType.RECEIVED) {
             // Resets on receipt regardless of whether the new balance actually

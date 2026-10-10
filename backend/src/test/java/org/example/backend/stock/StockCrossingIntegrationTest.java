@@ -1,5 +1,6 @@
 package org.example.backend.stock;
 
+import org.example.backend.shop.TestShops;
 import org.example.backend.notify.Notifier;
 import org.example.backend.product.Product;
 import org.example.backend.product.ProductRepository;
@@ -53,8 +54,8 @@ class StockCrossingIntegrationTest {
 
     @Test
     void firesOnceWhenBalanceCrossesBelowAlertLevelAndNotAgainWhileStillBelow() {
-        User owner = userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
-        Product chicken = productRepository.save(new Product(
+        User owner = userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
+        Product chicken = productRepository.save(new Product(TestShops.ONE,
                 "Crossing Test Chicken", ProductUnit.KG, new BigDecimal("45.00"), new BigDecimal("10.00")));
         receiveStockService.receive(chicken.getId(), null, new BigDecimal("20.00"), owner);
         notifier.messages.clear();
@@ -69,8 +70,8 @@ class StockCrossingIntegrationTest {
 
     @Test
     void doesNotFireWhileBalanceStaysAboveAlertLevel() {
-        User owner = userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
-        Product oil = productRepository.save(new Product(
+        User owner = userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
+        Product oil = productRepository.save(new Product(TestShops.ONE,
                 "Crossing Test Oil", ProductUnit.UNIT, new BigDecimal("25.00"), new BigDecimal("5.00")));
         receiveStockService.receive(oil.getId(), null, new BigDecimal("20"), owner);
         notifier.messages.clear();
@@ -82,8 +83,8 @@ class StockCrossingIntegrationTest {
 
     @Test
     void receivingResetsSoALaterCrossingFiresAgain() {
-        User owner = userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
-        Product tinnedTomato = productRepository.save(new Product(
+        User owner = userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
+        Product tinnedTomato = productRepository.save(new Product(TestShops.ONE,
                 "Crossing Test Tinned Tomato", ProductUnit.UNIT, new BigDecimal("8.00"), new BigDecimal("10.00")));
         receiveStockService.receive(tinnedTomato.getId(), null, new BigDecimal("20"), owner);
         notifier.messages.clear();

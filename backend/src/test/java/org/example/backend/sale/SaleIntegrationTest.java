@@ -1,5 +1,6 @@
 package org.example.backend.sale;
 
+import org.example.backend.shop.TestShops;
 import org.example.backend.product.Product;
 import org.example.backend.product.ProductRepository;
 import org.example.backend.product.ProductUnit;
@@ -42,10 +43,10 @@ class SaleIntegrationTest {
 
     @Test
     void confirmsAMultiLineSaleAndWritesTheLedger() {
-        User staff = userRepository.save(new User("Sale Test Staff", UserRole.STAFF));
-        Product chicken = productRepository.save(new Product(
+        User staff = userRepository.save(new User(TestShops.ONE, "Sale Test Staff", UserRole.STAFF));
+        Product chicken = productRepository.save(new Product(TestShops.ONE,
                 "Sale Test Chicken", ProductUnit.KG, new BigDecimal("45.00"), new BigDecimal("10.00")));
-        Product oil = productRepository.save(new Product(
+        Product oil = productRepository.save(new Product(TestShops.ONE,
                 "Sale Test Cooking Oil", ProductUnit.UNIT, new BigDecimal("25.00"), new BigDecimal("5.00")));
 
         SaleService.SaleResult result = saleService.confirmSale(List.of(
@@ -64,8 +65,8 @@ class SaleIntegrationTest {
 
     @Test
     void allowsSellingPastZero() {
-        User staff = userRepository.save(new User("Sale Test Staff", UserRole.STAFF));
-        Product chicken = productRepository.save(new Product(
+        User staff = userRepository.save(new User(TestShops.ONE, "Sale Test Staff", UserRole.STAFF));
+        Product chicken = productRepository.save(new Product(TestShops.ONE,
                 "Sale Test Chicken", ProductUnit.KG, new BigDecimal("45.00"), new BigDecimal("10.00")));
 
         SaleService.SaleResult result = saleService.confirmSale(
@@ -77,7 +78,7 @@ class SaleIntegrationTest {
 
     @Test
     void rejectsAnEmptySale() {
-        User staff = userRepository.save(new User("Sale Test Staff", UserRole.STAFF));
+        User staff = userRepository.save(new User(TestShops.ONE, "Sale Test Staff", UserRole.STAFF));
 
         assertThatThrownBy(() -> saleService.confirmSale(List.of(), staff.getId()))
                 .isInstanceOf(IllegalArgumentException.class);
@@ -87,8 +88,8 @@ class SaleIntegrationTest {
 
     @Test
     void rejectsAZeroOrNegativeQuantity() {
-        User staff = userRepository.save(new User("Sale Test Staff", UserRole.STAFF));
-        Product chicken = productRepository.save(new Product(
+        User staff = userRepository.save(new User(TestShops.ONE, "Sale Test Staff", UserRole.STAFF));
+        Product chicken = productRepository.save(new Product(TestShops.ONE,
                 "Sale Test Chicken", ProductUnit.KG, new BigDecimal("45.00"), new BigDecimal("10.00")));
 
         assertThatThrownBy(() -> saleService.confirmSale(
@@ -101,8 +102,8 @@ class SaleIntegrationTest {
 
     @Test
     void rejectsAFractionalQuantityForAUnitProduct() {
-        User staff = userRepository.save(new User("Sale Test Staff", UserRole.STAFF));
-        Product oil = productRepository.save(new Product(
+        User staff = userRepository.save(new User(TestShops.ONE, "Sale Test Staff", UserRole.STAFF));
+        Product oil = productRepository.save(new Product(TestShops.ONE,
                 "Sale Test Cooking Oil", ProductUnit.UNIT, new BigDecimal("25.00"), new BigDecimal("5.00")));
 
         assertThatThrownBy(() -> saleService.confirmSale(
@@ -113,8 +114,8 @@ class SaleIntegrationTest {
 
     @Test
     void rejectsADiscountThatExceedsTheLineTotal() {
-        User staff = userRepository.save(new User("Sale Test Staff", UserRole.STAFF));
-        Product chicken = productRepository.save(new Product(
+        User staff = userRepository.save(new User(TestShops.ONE, "Sale Test Staff", UserRole.STAFF));
+        Product chicken = productRepository.save(new Product(TestShops.ONE,
                 "Sale Test Chicken", ProductUnit.KG, new BigDecimal("45.00"), new BigDecimal("10.00")));
 
         assertThatThrownBy(() -> saleService.confirmSale(List.of(
@@ -126,8 +127,8 @@ class SaleIntegrationTest {
 
     @Test
     void rejectsAnInactiveProduct() {
-        User staff = userRepository.save(new User("Sale Test Staff", UserRole.STAFF));
-        Product discontinued = productRepository.save(new Product(
+        User staff = userRepository.save(new User(TestShops.ONE, "Sale Test Staff", UserRole.STAFF));
+        Product discontinued = productRepository.save(new Product(TestShops.ONE,
                 "Sale Test Discontinued", ProductUnit.UNIT, new BigDecimal("5.00"), new BigDecimal("2.00")));
         discontinued.setActive(false);
         productRepository.save(discontinued);
@@ -140,9 +141,9 @@ class SaleIntegrationTest {
 
     @Test
     void listsOnlyActiveProductsForSale() {
-        Product active = productRepository.save(new Product(
+        Product active = productRepository.save(new Product(TestShops.ONE,
                 "Sale Test Active", ProductUnit.UNIT, new BigDecimal("5.00"), new BigDecimal("2.00")));
-        Product inactive = productRepository.save(new Product(
+        Product inactive = productRepository.save(new Product(TestShops.ONE,
                 "Sale Test Inactive", ProductUnit.UNIT, new BigDecimal("5.00"), new BigDecimal("2.00")));
         inactive.setActive(false);
         productRepository.save(inactive);

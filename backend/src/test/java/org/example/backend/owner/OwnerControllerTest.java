@@ -1,5 +1,6 @@
 package org.example.backend.owner;
 
+import org.example.backend.shop.TestShops;
 import org.example.backend.security.OwnerJwtAuthoritiesConverter;
 import org.example.backend.user.User;
 import org.example.backend.user.UserRepository;
@@ -56,7 +57,7 @@ class OwnerControllerTest {
 
     @Test
     void jwtForAStaffUserIsForbidden() throws Exception {
-        User staff = new User("Kofi", UserRole.STAFF);
+        User staff = new User(TestShops.ONE, "Kofi", UserRole.STAFF);
         staff.setClerkUserId("clerk_staff_1");
         userRepository.save(staff);
 
@@ -67,7 +68,7 @@ class OwnerControllerTest {
 
     @Test
     void jwtForTheOwnerReturnsHerProfile() throws Exception {
-        User owner = new User("Aunt Amerley", UserRole.OWNER);
+        User owner = new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER);
         owner.setClerkUserId("clerk_owner_1");
         userRepository.save(owner);
 
@@ -80,7 +81,7 @@ class OwnerControllerTest {
 
     @Test
     void ownerCanSetHerPhoneNumberInInternationalFormat() throws Exception {
-        User owner = new User("Aunt Amerley", UserRole.OWNER);
+        User owner = new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER);
         owner.setClerkUserId("clerk_owner_2");
         userRepository.save(owner);
 
@@ -94,7 +95,7 @@ class OwnerControllerTest {
 
     @Test
     void rejectsAPhoneNumberNotInInternationalFormat() throws Exception {
-        User owner = new User("Aunt Amerley", UserRole.OWNER);
+        User owner = new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER);
         owner.setClerkUserId("clerk_owner_3");
         userRepository.save(owner);
 

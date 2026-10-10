@@ -1,5 +1,6 @@
 package org.example.backend.staff;
 
+import org.example.backend.shop.TestShops;
 import org.example.backend.device.DevicePairingService;
 import org.example.backend.user.User;
 import org.example.backend.user.UserRepository;
@@ -56,7 +57,7 @@ class StaffAccessHttpIntegrationTest {
     }
 
     private String pairDevice() throws Exception {
-        User owner = userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
+        User owner = userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
         String code = devicePairingService.generateCode(owner);
 
         String response = mockMvc.perform(post("/api/devices/pair")
@@ -83,7 +84,7 @@ class StaffAccessHttpIntegrationTest {
     @Test
     void pairedDeviceCanListRoster() throws Exception {
         String deviceToken = pairDevice();
-        User staff = new User("Kofi", UserRole.STAFF);
+        User staff = new User(TestShops.ONE, "Kofi", UserRole.STAFF);
         staff.setPinHash(new BCryptPasswordEncoder().encode("1234"));
         userRepository.save(staff);
 
@@ -95,7 +96,7 @@ class StaffAccessHttpIntegrationTest {
     @Test
     void loginWithWrongPinIsUnauthorized() throws Exception {
         String deviceToken = pairDevice();
-        User staff = new User("Kofi", UserRole.STAFF);
+        User staff = new User(TestShops.ONE, "Kofi", UserRole.STAFF);
         staff.setPinHash(new BCryptPasswordEncoder().encode("1234"));
         User saved = userRepository.save(staff);
 
@@ -109,7 +110,7 @@ class StaffAccessHttpIntegrationTest {
     @Test
     void loginThenLogoutRoundTrips() throws Exception {
         String deviceToken = pairDevice();
-        User staff = new User("Kofi", UserRole.STAFF);
+        User staff = new User(TestShops.ONE, "Kofi", UserRole.STAFF);
         staff.setPinHash(new BCryptPasswordEncoder().encode("1234"));
         User saved = userRepository.save(staff);
 

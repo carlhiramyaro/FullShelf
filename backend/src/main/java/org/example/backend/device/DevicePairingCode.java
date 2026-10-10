@@ -1,5 +1,6 @@
 package org.example.backend.device;
 
+import org.example.backend.shop.Shop;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -38,13 +39,22 @@ public class DevicePairingCode {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "shop_id", nullable = false, updatable = false)
+    private Shop shop;
+
     protected DevicePairingCode() {
     }
 
     public DevicePairingCode(String codeHash, User createdBy, Instant expiresAt) {
         this.codeHash = codeHash;
         this.createdBy = createdBy;
+        this.shop = createdBy.getShop();
         this.expiresAt = expiresAt;
+    }
+
+    public Shop getShop() {
+        return shop;
     }
 
     public Long getId() {

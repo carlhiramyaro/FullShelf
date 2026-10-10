@@ -67,7 +67,7 @@ public class DevicePairingService {
         pairingCode.setRedeemedAt(Instant.now());
 
         String rawDeviceToken = tokenHasher.newRawToken();
-        deviceRepository.save(new Device(tokenHasher.hash(rawDeviceToken)));
+        deviceRepository.save(new Device(pairingCode.getShop(), tokenHasher.hash(rawDeviceToken)));
         return rawDeviceToken;
     }
 

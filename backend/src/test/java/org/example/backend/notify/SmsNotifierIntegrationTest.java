@@ -1,5 +1,6 @@
 package org.example.backend.notify;
 
+import org.example.backend.shop.TestShops;
 import org.example.backend.user.User;
 import org.example.backend.user.UserRepository;
 import org.example.backend.user.UserRole;
@@ -48,7 +49,7 @@ class SmsNotifierIntegrationTest {
 
     @Test
     void sendsToTheOwnersConfiguredPhoneNumber() {
-        User owner = new User("Aunt Amerley", UserRole.OWNER);
+        User owner = new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER);
         owner.setPhoneNumber("+233241234567");
         userRepository.save(owner);
 
@@ -61,11 +62,11 @@ class SmsNotifierIntegrationTest {
 
     @Test
     void ignoresADeactivatedOwnerEvenIfItSortsFirstAndHasAPhoneNumber() {
-        User stale = new User("Aaa stale owner", UserRole.OWNER);
+        User stale = new User(TestShops.ONE, "Aaa stale owner", UserRole.OWNER);
         stale.setPhoneNumber("+233200000000");
         stale.setActive(false);
         userRepository.save(stale);
-        User owner = new User("Aunt Amerley", UserRole.OWNER);
+        User owner = new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER);
         owner.setPhoneNumber("+233241234567");
         userRepository.save(owner);
 
@@ -77,7 +78,7 @@ class SmsNotifierIntegrationTest {
 
     @Test
     void doesNothingWhenOwnerHasNoPhoneNumberSetYet() {
-        userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
+        userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
 
         smsNotifier.send("Chicken is at 5.00 KG (alert level 10.00)");
 
@@ -86,7 +87,7 @@ class SmsNotifierIntegrationTest {
 
     @Test
     void swallowsAGatewayFailureRatherThanPropagatingIt() {
-        User owner = new User("Aunt Amerley", UserRole.OWNER);
+        User owner = new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER);
         owner.setPhoneNumber("+233241234567");
         userRepository.save(owner);
         smsGateway.failNext = true;

@@ -1,5 +1,6 @@
 package org.example.backend.security;
 
+import org.example.backend.shop.CurrentShop;
 import org.example.backend.user.User;
 import org.example.backend.user.UserRepository;
 import org.example.backend.user.UserRole;
@@ -35,11 +36,13 @@ public class OwnerBootstrapRunner implements ApplicationRunner {
     private static final Logger log = LoggerFactory.getLogger(OwnerBootstrapRunner.class);
 
     private final UserRepository userRepository;
+    private final CurrentShop currentShop;
     private final String ownerClerkUserId;
 
-    public OwnerBootstrapRunner(UserRepository userRepository,
+    public OwnerBootstrapRunner(UserRepository userRepository, CurrentShop currentShop,
                                  @Value("${app.owner-clerk-user-id:}") String ownerClerkUserId) {
         this.userRepository = userRepository;
+        this.currentShop = currentShop;
         this.ownerClerkUserId = ownerClerkUserId;
     }
 
@@ -60,7 +63,7 @@ public class OwnerBootstrapRunner implements ApplicationRunner {
         } else {
             List<User> activeOwners = userRepository.findByRoleAndActiveTrueOrderByIdAsc(UserRole.OWNER);
             if (activeOwners.isEmpty()) {
-                owner = new User("Owner", UserRole.OWNER);
+                owner = new User(currentShop.get(), "Owner", UserRole.OWNER);
                 owner.setClerkUserId(ownerClerkUserId);
                 userRepository.save(owner);
                 log.info("Bootstrapped owner user for Clerk id {}", ownerClerkUserId);

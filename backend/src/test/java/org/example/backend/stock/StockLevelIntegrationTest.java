@@ -1,5 +1,6 @@
 package org.example.backend.stock;
 
+import org.example.backend.shop.TestShops;
 import org.example.backend.product.Product;
 import org.example.backend.product.ProductRepository;
 import org.example.backend.product.ProductUnit;
@@ -40,9 +41,9 @@ class StockLevelIntegrationTest {
 
     @Test
     void flagsAProductAtOrBelowItsAlertLevelAsLow() {
-        User owner = userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
+        User owner = userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
         Product chicken = productRepository.save(
-                new Product("Level Test Chicken", ProductUnit.KG, new BigDecimal("45.00"), new BigDecimal("10.00")));
+                new Product(TestShops.ONE, "Level Test Chicken", ProductUnit.KG, new BigDecimal("45.00"), new BigDecimal("10.00")));
         stockMovementService.record(chicken, new BigDecimal("10.00"), StockMovementType.OPENING, owner, null, null);
 
         StockLevelService.ProductStockLevel level = levelFor(chicken.getId());
@@ -53,9 +54,9 @@ class StockLevelIntegrationTest {
 
     @Test
     void flagsAProductBelowZeroAsNegativeEvenThoughItsAlsoLow() {
-        User owner = userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
+        User owner = userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
         Product oil = productRepository.save(
-                new Product("Level Test Cooking Oil", ProductUnit.UNIT, new BigDecimal("25.00"), new BigDecimal("5.00")));
+                new Product(TestShops.ONE, "Level Test Cooking Oil", ProductUnit.UNIT, new BigDecimal("25.00"), new BigDecimal("5.00")));
         stockMovementService.record(oil, new BigDecimal("3.00"), StockMovementType.OPENING, owner, null, null);
         stockMovementService.record(oil, new BigDecimal("-8.00"), StockMovementType.SALE, owner, null, null);
 
@@ -67,9 +68,9 @@ class StockLevelIntegrationTest {
 
     @Test
     void flagsAProductComfortablyAboveItsAlertLevelAsOk() {
-        User owner = userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
+        User owner = userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
         Product tinnedTomato = productRepository.save(
-                new Product("Level Test Tinned Tomato", ProductUnit.UNIT, new BigDecimal("8.00"), new BigDecimal("15.00")));
+                new Product(TestShops.ONE, "Level Test Tinned Tomato", ProductUnit.UNIT, new BigDecimal("8.00"), new BigDecimal("15.00")));
         stockMovementService.record(
                 tinnedTomato, new BigDecimal("60.00"), StockMovementType.OPENING, owner, null, null);
 
@@ -82,7 +83,7 @@ class StockLevelIntegrationTest {
     @Test
     void excludesInactiveProducts() {
         Product spices = productRepository.save(
-                new Product("Level Test Spices", ProductUnit.UNIT, new BigDecimal("12.00"), new BigDecimal("5.00")));
+                new Product(TestShops.ONE, "Level Test Spices", ProductUnit.UNIT, new BigDecimal("12.00"), new BigDecimal("5.00")));
         spices.setActive(false);
         productRepository.save(spices);
 

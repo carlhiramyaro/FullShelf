@@ -1,5 +1,6 @@
 package org.example.backend.device;
 
+import org.example.backend.shop.TestShops;
 import org.example.backend.user.User;
 import org.example.backend.user.UserRepository;
 import org.example.backend.user.UserRole;
@@ -31,7 +32,7 @@ class DevicePairingServiceIntegrationTest {
 
     @Test
     void redeemingAFreshCodePairsANewUnrevokedDevice() {
-        User owner = userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
+        User owner = userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
         String code = devicePairingService.generateCode(owner);
 
         String deviceToken = devicePairingService.redeemCode(code);
@@ -43,7 +44,7 @@ class DevicePairingServiceIntegrationTest {
 
     @Test
     void redeemingTheSameCodeTwiceIsRejected() {
-        User owner = userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
+        User owner = userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
         String code = devicePairingService.generateCode(owner);
         devicePairingService.redeemCode(code);
 
@@ -59,7 +60,7 @@ class DevicePairingServiceIntegrationTest {
 
     @Test
     void revokingADeviceStopsItBeingPaired() {
-        User owner = userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
+        User owner = userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
         String code = devicePairingService.generateCode(owner);
         devicePairingService.redeemCode(code);
         Long deviceId = deviceRepository.findAll().get(0).getId();

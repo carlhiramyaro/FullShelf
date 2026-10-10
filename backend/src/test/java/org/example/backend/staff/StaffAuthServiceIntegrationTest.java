@@ -1,5 +1,6 @@
 package org.example.backend.staff;
 
+import org.example.backend.shop.TestShops;
 import org.example.backend.device.Device;
 import org.example.backend.device.DeviceRepository;
 import org.example.backend.user.User;
@@ -37,7 +38,7 @@ class StaffAuthServiceIntegrationTest {
     private StaffSessionRepository staffSessionRepository;
 
     private Device pairedDevice() {
-        return deviceRepository.save(new Device("some-device-token-hash-" + System.nanoTime()));
+        return deviceRepository.save(new Device(TestShops.ONE, "some-device-token-hash-" + System.nanoTime()));
     }
 
     @Test

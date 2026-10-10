@@ -1,5 +1,6 @@
 package org.example.backend.sale;
 
+import org.example.backend.shop.TestShops;
 import org.example.backend.product.Product;
 import org.example.backend.product.ProductRepository;
 import org.example.backend.product.ProductUnit;
@@ -51,11 +52,11 @@ class VoidSaleIntegrationTest {
 
     @Test
     void voidsAMultiLineSaleAndRestoresStock() {
-        User staff = userRepository.save(new User("Void Test Staff", UserRole.STAFF));
-        User owner = userRepository.save(new User("Void Test Owner", UserRole.OWNER));
-        Product chicken = productRepository.save(new Product(
+        User staff = userRepository.save(new User(TestShops.ONE, "Void Test Staff", UserRole.STAFF));
+        User owner = userRepository.save(new User(TestShops.ONE, "Void Test Owner", UserRole.OWNER));
+        Product chicken = productRepository.save(new Product(TestShops.ONE,
                 "Void Test Chicken", ProductUnit.KG, new BigDecimal("45.00"), new BigDecimal("10.00")));
-        Product oil = productRepository.save(new Product(
+        Product oil = productRepository.save(new Product(TestShops.ONE,
                 "Void Test Cooking Oil", ProductUnit.UNIT, new BigDecimal("25.00"), new BigDecimal("5.00")));
 
         SaleService.SaleResult sale = saleService.confirmSale(List.of(
@@ -74,9 +75,9 @@ class VoidSaleIntegrationTest {
 
     @Test
     void leavesTheOriginalSaleMovementsUntouchedAndAddsVoidRows() {
-        User staff = userRepository.save(new User("Void Test Staff", UserRole.STAFF));
-        User owner = userRepository.save(new User("Void Test Owner", UserRole.OWNER));
-        Product chicken = productRepository.save(new Product(
+        User staff = userRepository.save(new User(TestShops.ONE, "Void Test Staff", UserRole.STAFF));
+        User owner = userRepository.save(new User(TestShops.ONE, "Void Test Owner", UserRole.OWNER));
+        Product chicken = productRepository.save(new Product(TestShops.ONE,
                 "Void Test Beef", ProductUnit.KG, new BigDecimal("50.00"), new BigDecimal("10.00")));
 
         SaleService.SaleResult sale = saleService.confirmSale(
@@ -95,9 +96,9 @@ class VoidSaleIntegrationTest {
 
     @Test
     void rejectsVoidingTheSameSaleTwice() {
-        User staff = userRepository.save(new User("Void Test Staff", UserRole.STAFF));
-        User owner = userRepository.save(new User("Void Test Owner", UserRole.OWNER));
-        Product spices = productRepository.save(new Product(
+        User staff = userRepository.save(new User(TestShops.ONE, "Void Test Staff", UserRole.STAFF));
+        User owner = userRepository.save(new User(TestShops.ONE, "Void Test Owner", UserRole.OWNER));
+        Product spices = productRepository.save(new Product(TestShops.ONE,
                 "Void Test Spices", ProductUnit.UNIT, new BigDecimal("12.00"), new BigDecimal("5.00")));
 
         SaleService.SaleResult sale = saleService.confirmSale(
@@ -111,7 +112,7 @@ class VoidSaleIntegrationTest {
 
     @Test
     void rejectsVoidingAnUnknownReceiptNumber() {
-        User owner = userRepository.save(new User("Void Test Owner", UserRole.OWNER));
+        User owner = userRepository.save(new User(TestShops.ONE, "Void Test Owner", UserRole.OWNER));
 
         assertThatThrownBy(() -> voidSaleService.voidSale(999_999_999L, null, owner))
                 .isInstanceOf(IllegalArgumentException.class)

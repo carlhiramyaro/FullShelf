@@ -1,5 +1,6 @@
 package org.example.backend.sale;
 
+import org.example.backend.shop.TestShops;
 import jakarta.persistence.EntityManager;
 import org.example.backend.product.Product;
 import org.example.backend.product.ProductRepository;
@@ -68,9 +69,9 @@ class DayCloseIntegrationTest {
 
     @Test
     void listsAndTotalsOnlyThePickedDaysUnvoidedSales() {
-        User staff = userRepository.save(new User("Day Close Test Staff", UserRole.STAFF));
-        User owner = userRepository.save(new User("Day Close Test Owner", UserRole.OWNER));
-        Product oil = productRepository.save(new Product(
+        User staff = userRepository.save(new User(TestShops.ONE, "Day Close Test Staff", UserRole.STAFF));
+        User owner = userRepository.save(new User(TestShops.ONE, "Day Close Test Owner", UserRole.OWNER));
+        Product oil = productRepository.save(new Product(TestShops.ONE,
                 "Day Close Test Oil", ProductUnit.UNIT, new BigDecimal("25.00"), new BigDecimal("5.00")));
 
         // On the picked day, counted: 2 units at 25.00 with a 5.00 discount -> lineTotal 45.00

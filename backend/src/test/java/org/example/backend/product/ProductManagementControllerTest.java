@@ -1,5 +1,6 @@
 package org.example.backend.product;
 
+import org.example.backend.shop.TestShops;
 import org.example.backend.security.OwnerJwtAuthoritiesConverter;
 import org.example.backend.user.User;
 import org.example.backend.user.UserRepository;
@@ -46,7 +47,7 @@ class ProductManagementControllerTest {
 
     @Test
     void invalidPriceReturnsBadRequestNotServerError() throws Exception {
-        User owner = new User("Aunt Amerley", UserRole.OWNER);
+        User owner = new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER);
         owner.setClerkUserId("clerk_owner_products");
         userRepository.save(owner);
 
@@ -60,7 +61,7 @@ class ProductManagementControllerTest {
 
     @Test
     void creatingThenListingRoundTrips() throws Exception {
-        User owner = new User("Aunt Amerley", UserRole.OWNER);
+        User owner = new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER);
         owner.setClerkUserId("clerk_owner_products_2");
         userRepository.save(owner);
 
