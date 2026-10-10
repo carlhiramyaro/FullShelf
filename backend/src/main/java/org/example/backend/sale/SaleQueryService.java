@@ -1,5 +1,6 @@
 package org.example.backend.sale;
 
+import org.example.backend.shop.CurrentShop;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,20 +26,23 @@ public class SaleQueryService {
 
     private final SaleRepository saleRepository;
     private final SaleLineRepository saleLineRepository;
+    private final CurrentShop currentShop;
 
-    public SaleQueryService(SaleRepository saleRepository, SaleLineRepository saleLineRepository) {
+    public SaleQueryService(SaleRepository saleRepository, SaleLineRepository saleLineRepository,
+                             CurrentShop currentShop) {
         this.saleRepository = saleRepository;
         this.saleLineRepository = saleLineRepository;
+        this.currentShop = currentShop;
     }
 
     @Transactional(readOnly = true)
     public List<SaleSummary> listToday() {
-        return summarize(saleRepository.findByCreatedAtGreaterThanEqualOrderByCreatedAtDesc(startOfToday()));
+        return summarize(saleRepository.findByShopAndCreatedAtGreaterThanEqualOrderByCreatedAtDesc(currentShop.get(), startOfToday()));
     }
 
     @Transactional(readOnly = true)
     public List<SaleSummary> listAll() {
-        return summarize(saleRepository.findAllByOrderByCreatedAtDesc());
+        return summarize(saleRepository.findByShopOrderByCreatedAtDesc(currentShop.get()));
     }
 
     // Dashboard's sales/discounts/expected-cash figures. Gross sales isn't
@@ -61,7 +65,7 @@ public class SaleQueryService {
     public List<DaySaleSummary> listForDay(LocalDate date) {
         Instant from = startOfDay(date);
         Instant to = startOfDay(date.plusDays(1));
-        return saleRepository.findByCreatedAtGreaterThanEqualAndCreatedAtLessThanOrderByCreatedAtDesc(from, to)
+        return saleRepository.findByShopAndCreatedAtGreaterThanEqualAndCreatedAtLessThanOrderByCreatedAtDesc(currentShop.get(), from, to)
                 .stream()
                 .map(sale -> new DaySaleSummary(sale.getReceiptNumber(), sale.getCreatedAt(),
                         sale.getStaff().getName(), saleLineRepository.sumLineTotalBySaleId(sale.getId()),
@@ -82,7 +86,7 @@ public class SaleQueryService {
 
     @Transactional(readOnly = true)
     public SaleDetail findByReceiptNumber(Long receiptNumber) {
-        Sale sale = saleRepository.findByReceiptNumber(receiptNumber)
+        Sale sale = saleRepository.findByShopAndReceiptNumber(currentShop.get(), receiptNumber)
                 .orElseThrow(() -> new IllegalArgumentException("No sale with receipt number " + receiptNumber));
         List<SaleLine> lines = saleLineRepository.findBySaleId(sale.getId());
         List<SaleLineDetail> lineDetails = lines.stream().map(SaleLineDetail::from).toList();

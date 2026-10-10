@@ -1,5 +1,6 @@
 package org.example.backend.user;
 
+import org.example.backend.shop.Shop;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -12,6 +13,15 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @EntityGraph(attributePaths = "shop")
     Optional<User> findByClerkUserId(String clerkUserId);
 
+    // Shop-scoped lookups for staff management, roster and sale creation.
+    Optional<User> findByIdAndShop(Long id, Shop shop);
+
+    List<User> findByShopAndRoleOrderByName(Shop shop, UserRole role);
+
+    List<User> findByShopAndRoleAndActiveTrueOrderByName(Shop shop, UserRole role);
+
+    // Still unscoped on purpose: OwnerBootstrapRunner (deleted in G7) and
+    // SmsNotifier (G5) call these.
     List<User> findByRoleOrderByName(UserRole role);
 
     List<User> findByRoleAndActiveTrueOrderByName(UserRole role);

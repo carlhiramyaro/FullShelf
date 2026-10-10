@@ -57,11 +57,11 @@ public class StaffManagementService {
     }
 
     public List<User> listStaff() {
-        return userRepository.findByRoleOrderByName(UserRole.STAFF);
+        return userRepository.findByShopAndRoleOrderByName(currentShop.get(), UserRole.STAFF);
     }
 
     private User getStaff(Long staffId) {
-        User user = userRepository.findById(staffId)
+        User user = userRepository.findByIdAndShop(staffId, currentShop.get())
                 .orElseThrow(() -> new IllegalArgumentException("No staff " + staffId));
         if (user.getRole() != UserRole.STAFF) {
             throw new IllegalArgumentException("User " + staffId + " is not staff");

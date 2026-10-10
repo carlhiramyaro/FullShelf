@@ -58,7 +58,7 @@ public class SaleService {
         if (lines == null || lines.isEmpty()) {
             throw new IllegalArgumentException("A sale needs at least one line");
         }
-        User staff = userRepository.findById(staffUserId).orElseThrow();
+        User staff = userRepository.findByIdAndShop(staffUserId, currentShop.get()).orElseThrow();
 
         // Resolve and validate every line before writing anything — a sale is
         // one atomic confirm action, so one bad line rejects the whole

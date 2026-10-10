@@ -2,6 +2,7 @@ package org.example.backend.device;
 
 import org.example.backend.user.User;
 import org.example.backend.user.UserRepository;
+import org.example.backend.shop.CurrentShop;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,9 +25,11 @@ public class DeviceManagementController {
     private final DevicePairingService devicePairingService;
     private final DeviceRepository deviceRepository;
     private final UserRepository userRepository;
+    private final CurrentShop currentShop;
 
     public DeviceManagementController(DevicePairingService devicePairingService, DeviceRepository deviceRepository,
-                                       UserRepository userRepository) {
+                                       UserRepository userRepository, CurrentShop currentShop) {
+        this.currentShop = currentShop;
         this.devicePairingService = devicePairingService;
         this.deviceRepository = deviceRepository;
         this.userRepository = userRepository;
@@ -41,7 +44,7 @@ public class DeviceManagementController {
 
     @GetMapping
     public List<DeviceResponse> list() {
-        return deviceRepository.findAll().stream().map(DeviceResponse::from).toList();
+        return deviceRepository.findByShopOrderById(currentShop.get()).stream().map(DeviceResponse::from).toList();
     }
 
     @PostMapping("/{id}/revoke")
