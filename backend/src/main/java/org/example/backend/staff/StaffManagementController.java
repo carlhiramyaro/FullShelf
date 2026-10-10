@@ -1,6 +1,9 @@
 package org.example.backend.staff;
 
 import org.example.backend.user.User;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -42,6 +45,18 @@ public class StaffManagementController {
     @PostMapping("/{id}/deactivate")
     public void deactivate(@PathVariable Long id) {
         staffManagementService.deactivate(id);
+    }
+
+    // Bad input and "no such id in your shop" both land here as a 400, the
+    // same convention as the other owner controllers (G6: another shop's id
+    // must look exactly like one that doesn't exist, not a 500).
+    @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleBadInput(IllegalArgumentException ex) {
+        return new ErrorResponse(ex.getMessage());
+    }
+
+    public record ErrorResponse(String message) {
     }
 
     public record CreateStaffRequest(String name, String pin) {

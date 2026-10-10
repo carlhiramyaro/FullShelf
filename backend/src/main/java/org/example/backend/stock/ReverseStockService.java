@@ -54,6 +54,8 @@ public class ReverseStockService {
     }
 
     public List<StockMovement> reversibleMovements(Long productId) {
+        productRepository.findByIdAndShop(productId, currentShop.get())
+                .orElseThrow(() -> new IllegalArgumentException("No product " + productId));
         return stockMovementRepository.findByProductIdAndTypeInOrderByCreatedAtDesc(productId, REVERSIBLE_TYPES)
                 .stream()
                 .filter(movement -> !stockMovementRepository.existsByReversedMovementId(movement.getId()))
