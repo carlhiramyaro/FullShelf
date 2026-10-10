@@ -48,9 +48,11 @@ public class StaffAuthService {
     @Transactional
     public String login(Long deviceId, Long staffId, String pin) {
         Device device = deviceRepository.getReferenceById(deviceId);
+        Long deviceShopId = device.getShop().getId();
 
         User staff = userRepository.findById(staffId)
-                .filter(u -> u.getRole() == UserRole.STAFF && u.isActive())
+                .filter(u -> u.getRole() == UserRole.STAFF && u.isActive()
+                        && u.getShop().getId().equals(deviceShopId))
                 .orElseThrow(() -> new InvalidPinException("Incorrect PIN"));
 
         if (staff.isPinLocked()) {

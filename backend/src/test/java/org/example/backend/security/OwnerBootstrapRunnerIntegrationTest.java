@@ -1,6 +1,6 @@
 package org.example.backend.security;
 
-import org.example.backend.shop.CurrentShop;
+import org.example.backend.shop.ShopRepository;
 import org.example.backend.shop.TestShops;
 import org.example.backend.user.User;
 import org.example.backend.user.UserRepository;
@@ -31,10 +31,10 @@ class OwnerBootstrapRunnerIntegrationTest {
     private UserRepository userRepository;
 
     @Autowired
-    private CurrentShop currentShop;
+    private ShopRepository shopRepository;
 
     private void runBootstrap() {
-        new OwnerBootstrapRunner(userRepository, currentShop, NEW_ID).run(null);
+        new OwnerBootstrapRunner(userRepository, shopRepository, NEW_ID).run(null);
     }
 
     private List<User> activeOwners() {

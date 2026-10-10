@@ -1,6 +1,6 @@
 package org.example.backend.security;
 
-import org.example.backend.shop.CurrentShop;
+import org.example.backend.shop.ShopRepository;
 import org.example.backend.user.User;
 import org.example.backend.user.UserRepository;
 import org.example.backend.user.UserRole;
@@ -29,6 +29,9 @@ import java.util.List;
  * other owner rows are deactivated. Otherwise two active owners would
  * coexist, and anything that picks "the" owner by role (SmsNotifier) could
  * pick the stale one.
+ *
+ * Startup has no request and so no current shop: a new owner goes into shop
+ * #1. G7 replaces this whole runner.
  */
 @Component
 public class OwnerBootstrapRunner implements ApplicationRunner {
@@ -36,13 +39,13 @@ public class OwnerBootstrapRunner implements ApplicationRunner {
     private static final Logger log = LoggerFactory.getLogger(OwnerBootstrapRunner.class);
 
     private final UserRepository userRepository;
-    private final CurrentShop currentShop;
+    private final ShopRepository shopRepository;
     private final String ownerClerkUserId;
 
-    public OwnerBootstrapRunner(UserRepository userRepository, CurrentShop currentShop,
+    public OwnerBootstrapRunner(UserRepository userRepository, ShopRepository shopRepository,
                                  @Value("${app.owner-clerk-user-id:}") String ownerClerkUserId) {
         this.userRepository = userRepository;
-        this.currentShop = currentShop;
+        this.shopRepository = shopRepository;
         this.ownerClerkUserId = ownerClerkUserId;
     }
 
@@ -63,7 +66,8 @@ public class OwnerBootstrapRunner implements ApplicationRunner {
         } else {
             List<User> activeOwners = userRepository.findByRoleAndActiveTrueOrderByIdAsc(UserRole.OWNER);
             if (activeOwners.isEmpty()) {
-                owner = new User(currentShop.get(), "Owner", UserRole.OWNER);
+                owner = new User(shopRepository.findFirstByOrderByIdAsc()
+                        .orElseThrow(() -> new IllegalStateException("No shop exists")), "Owner", UserRole.OWNER);
                 owner.setClerkUserId(ownerClerkUserId);
                 userRepository.save(owner);
                 log.info("Bootstrapped owner user for Clerk id {}", ownerClerkUserId);

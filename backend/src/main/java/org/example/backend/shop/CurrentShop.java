@@ -5,21 +5,35 @@ import org.springframework.stereotype.Component;
 /**
  * The one place services ask "which shop is this request for?".
  *
- * TEMPORARY (G1): there is only shop #1 so far, so this returns it. G2
- * replaces the body with the shop resolved from the authenticated identity
- * (owner login, or device token plus staff session); callers don't change.
+ * The security filters (OwnerShopFilter for owner routes, StaffAccessFilter
+ * for staff routes) resolve the shop from the authenticated identity and
+ * {@link #set} it for the duration of the request, then {@link #clear} it.
+ * Nothing else sets it, and it is never read from a request body or URL.
+ * If nothing set it (unauthenticated, or a route with no shop), {@link #get}
+ * throws rather than guessing a shop.
+ *
+ * Held in a ThreadLocal on a singleton, not a request-scoped bean: a request
+ * is one thread end to end, and this keeps service-level tests (which run
+ * with no web request) able to set a shop directly.
  */
 @Component
 public class CurrentShop {
 
-    private final ShopRepository shopRepository;
-
-    public CurrentShop(ShopRepository shopRepository) {
-        this.shopRepository = shopRepository;
-    }
+    private static final ThreadLocal<Shop> CURRENT = new ThreadLocal<>();
 
     public Shop get() {
-        return shopRepository.findFirstByOrderByIdAsc()
-                .orElseThrow(() -> new IllegalStateException("No shop exists"));
+        Shop shop = CURRENT.get();
+        if (shop == null) {
+            throw new IllegalStateException("No shop is set for this request");
+        }
+        return shop;
+    }
+
+    public void set(Shop shop) {
+        CURRENT.set(shop);
+    }
+
+    public void clear() {
+        CURRENT.remove();
     }
 }

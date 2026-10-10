@@ -1,5 +1,6 @@
 package org.example.backend.user;
 
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -7,6 +8,8 @@ import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
 
+    // Shop loaded eagerly: OwnerShopFilter reads it outside a transaction.
+    @EntityGraph(attributePaths = "shop")
     Optional<User> findByClerkUserId(String clerkUserId);
 
     List<User> findByRoleOrderByName(UserRole role);

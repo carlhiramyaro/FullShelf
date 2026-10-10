@@ -7,6 +7,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.example.backend.device.Device;
 import org.example.backend.device.DevicePrincipal;
 import org.example.backend.device.DeviceRepository;
+import org.example.backend.shop.CurrentShop;
+import org.example.backend.shop.Shop;
 import org.example.backend.staff.StaffPrincipal;
 import org.example.backend.staff.StaffSession;
 import org.example.backend.staff.StaffSessionRepository;
@@ -35,12 +37,14 @@ public class StaffAccessFilter extends OncePerRequestFilter {
     private final DeviceRepository deviceRepository;
     private final StaffSessionRepository staffSessionRepository;
     private final TokenHasher tokenHasher;
+    private final CurrentShop currentShop;
 
     public StaffAccessFilter(DeviceRepository deviceRepository, StaffSessionRepository staffSessionRepository,
-                              TokenHasher tokenHasher) {
+                              TokenHasher tokenHasher, CurrentShop currentShop) {
         this.deviceRepository = deviceRepository;
         this.staffSessionRepository = staffSessionRepository;
         this.tokenHasher = tokenHasher;
+        this.currentShop = currentShop;
     }
 
     @Override
@@ -56,7 +60,11 @@ public class StaffAccessFilter extends OncePerRequestFilter {
             return;
         }
 
-        chain.doFilter(request, response);
+        try {
+            chain.doFilter(request, response);
+        } finally {
+            currentShop.clear();
+        }
     }
 
     private boolean authenticateDevice(HttpServletRequest request) {
@@ -68,6 +76,7 @@ public class StaffAccessFilter extends OncePerRequestFilter {
         if (device == null) {
             return false;
         }
+        currentShop.set(device.getShop());
         setAuthentication(new DevicePrincipal(device.getId()), "ROLE_DEVICE");
         return true;
     }
@@ -77,12 +86,19 @@ public class StaffAccessFilter extends OncePerRequestFilter {
         if (rawToken == null) {
             return false;
         }
-        StaffSession session = staffSessionRepository.findByTokenHashAndRevokedFalse(tokenHasher.hash(rawToken))
+        StaffSession session = staffSessionRepository.findActiveWithShops(tokenHasher.hash(rawToken))
                 .orElse(null);
         if (session == null) {
             return false;
         }
-        setAuthentication(new StaffPrincipal(session.getUser().getId(), session.getId()), "ROLE_STAFF");
+        // The session must sit on a still-paired device, and the staff member
+        // must belong to that device's shop.
+        Shop shop = session.getUser().getShop();
+        if (session.getDevice().isRevoked() || !shop.getId().equals(session.getDevice().getShop().getId())) {
+            return false;
+        }
+        currentShop.set(shop);
+        setAuthentication(new StaffPrincipal(session.getUser().getId(), session.getId(), shop.getId()), "ROLE_STAFF");
         return true;
     }
 
