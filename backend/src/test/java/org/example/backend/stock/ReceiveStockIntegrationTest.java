@@ -1,5 +1,8 @@
 package org.example.backend.stock;
 
+import org.example.backend.shop.CurrentShop;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.example.backend.shop.TestShops;
 import org.example.backend.product.Product;
 import org.example.backend.product.ProductRepository;
@@ -25,6 +28,19 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @SpringBootTest
 @Transactional
 class ReceiveStockIntegrationTest {
+
+    @Autowired
+    private CurrentShop currentShop;
+
+    @BeforeEach
+    void setCurrentShop() {
+        currentShop.set(TestShops.ONE);
+    }
+
+    @AfterEach
+    void clearCurrentShop() {
+        currentShop.clear();
+    }
 
     @Autowired
     private UserRepository userRepository;

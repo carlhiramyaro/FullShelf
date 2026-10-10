@@ -1,5 +1,6 @@
 package org.example.backend.stock;
 
+import org.example.backend.shop.Shop;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -19,6 +20,8 @@ public interface StockMovementRepository extends JpaRepository<StockMovement, Lo
     List<StockMovement> findByProductIdAndType(Long productId, StockMovementType type);
 
     List<StockMovement> findByProductIdAndTypeInOrderByCreatedAtDesc(Long productId, Collection<StockMovementType> types);
+
+    Optional<StockMovement> findByIdAndShop(Long id, Shop shop);
 
     List<StockMovement> findBySaleLineId(Long saleLineId);
 

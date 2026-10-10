@@ -2,6 +2,7 @@ package org.example.backend.stock;
 
 import org.example.backend.product.Product;
 import org.example.backend.product.ProductRepository;
+import org.example.backend.shop.CurrentShop;
 import org.example.backend.user.User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,17 +22,20 @@ public class WriteOffService {
     private final ProductRepository productRepository;
     private final StockMovementService stockMovementService;
     private final StockBalanceService stockBalanceService;
+    private final CurrentShop currentShop;
 
     public WriteOffService(ProductRepository productRepository,
                             StockMovementService stockMovementService,
-                            StockBalanceService stockBalanceService) {
+                            StockBalanceService stockBalanceService,
+                                CurrentShop currentShop) {
         this.productRepository = productRepository;
         this.stockMovementService = stockMovementService;
         this.stockBalanceService = stockBalanceService;
+        this.currentShop = currentShop;
     }
 
     public List<ProductWriteOffStatus> listStatus() {
-        return productRepository.findAllByOrderByName().stream()
+        return productRepository.findByShopOrderByName(currentShop.get()).stream()
                 .filter(Product::isActive)
                 .map(product -> new ProductWriteOffStatus(product, stockBalanceService.currentBalance(product.getId())))
                 .toList();
@@ -48,7 +52,7 @@ public class WriteOffService {
     }
 
     private Product getProduct(Long id) {
-        Product product = productRepository.findById(id)
+        Product product = productRepository.findByIdAndShop(id, currentShop.get())
                 .orElseThrow(() -> new IllegalArgumentException("No product " + id));
         if (!product.isActive()) {
             throw new IllegalArgumentException("\"" + product.getName() + "\" is not active");

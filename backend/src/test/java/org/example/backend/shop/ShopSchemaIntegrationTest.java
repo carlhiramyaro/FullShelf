@@ -7,6 +7,8 @@ import org.example.backend.sale.SaleService;
 import org.example.backend.user.User;
 import org.example.backend.user.UserRepository;
 import org.example.backend.user.UserRole;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -27,6 +29,19 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @SpringBootTest
 @Transactional
 class ShopSchemaIntegrationTest {
+
+    @Autowired
+    private CurrentShop currentShop;
+
+    @BeforeEach
+    void setCurrentShop() {
+        currentShop.set(TestShops.ONE);
+    }
+
+    @AfterEach
+    void clearCurrentShop() {
+        currentShop.clear();
+    }
 
     @Autowired
     private ShopRepository shopRepository;
@@ -86,8 +101,10 @@ class ShopSchemaIntegrationTest {
         Product pa = productRepository.save(product(a, "Schema Test Oil"));
         Product pb = productRepository.save(product(b, "Schema Test Oil"));
 
+        currentShop.set(a);
         var saleA = saleService.confirmSale(
                 List.of(new SaleService.LineRequest(pa.getId(), BigDecimal.ONE, null)), staffA.getId());
+        currentShop.set(b);
         var saleB = saleService.confirmSale(
                 List.of(new SaleService.LineRequest(pb.getId(), BigDecimal.ONE, null)), staffB.getId());
 
@@ -101,6 +118,7 @@ class ShopSchemaIntegrationTest {
         User staff = userRepository.save(new User(a, "Schema Staff A", UserRole.STAFF));
         Product p = productRepository.save(product(a, "Schema Test Tin"));
 
+        currentShop.set(a);
         var sale = saleService.confirmSale(
                 List.of(new SaleService.LineRequest(p.getId(), BigDecimal.ONE, null)), staff.getId());
 

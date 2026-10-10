@@ -1,5 +1,8 @@
 package org.example.backend.sale;
 
+import org.example.backend.shop.CurrentShop;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.example.backend.shop.TestShops;
 import jakarta.persistence.EntityManager;
 import org.example.backend.product.Product;
@@ -37,6 +40,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest
 @Transactional
 class DayCloseIntegrationTest {
+
+    @Autowired
+    private CurrentShop currentShop;
+
+    @BeforeEach
+    void setCurrentShop() {
+        currentShop.set(TestShops.ONE);
+    }
+
+    @AfterEach
+    void clearCurrentShop() {
+        currentShop.clear();
+    }
 
     @Autowired
     private UserRepository userRepository;

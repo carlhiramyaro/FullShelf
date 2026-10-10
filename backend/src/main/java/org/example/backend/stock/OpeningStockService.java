@@ -2,6 +2,7 @@ package org.example.backend.stock;
 
 import org.example.backend.product.Product;
 import org.example.backend.product.ProductRepository;
+import org.example.backend.shop.CurrentShop;
 import org.example.backend.user.User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,19 +29,22 @@ public class OpeningStockService {
     private final StockMovementRepository stockMovementRepository;
     private final StockMovementService stockMovementService;
     private final StockBalanceService stockBalanceService;
+    private final CurrentShop currentShop;
 
     public OpeningStockService(ProductRepository productRepository,
                                 StockMovementRepository stockMovementRepository,
                                 StockMovementService stockMovementService,
-                                StockBalanceService stockBalanceService) {
+                                StockBalanceService stockBalanceService,
+                                CurrentShop currentShop) {
         this.productRepository = productRepository;
         this.stockMovementRepository = stockMovementRepository;
         this.stockMovementService = stockMovementService;
         this.stockBalanceService = stockBalanceService;
+        this.currentShop = currentShop;
     }
 
     public List<ProductOpeningStatus> listStatus() {
-        return productRepository.findAllByOrderByName().stream()
+        return productRepository.findByShopOrderByName(currentShop.get()).stream()
                 .filter(Product::isActive)
                 .map(product -> new ProductOpeningStatus(product, hasUnreversedOpeningMovement(product.getId()),
                         stockBalanceService.currentBalance(product.getId())))
@@ -74,7 +78,7 @@ public class OpeningStockService {
     }
 
     private Product getProduct(Long id) {
-        return productRepository.findById(id)
+        return productRepository.findByIdAndShop(id, currentShop.get())
                 .orElseThrow(() -> new IllegalArgumentException("No product " + id));
     }
 

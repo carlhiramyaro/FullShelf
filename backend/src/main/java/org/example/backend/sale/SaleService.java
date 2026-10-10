@@ -1,5 +1,6 @@
 package org.example.backend.sale;
 
+import org.example.backend.shop.CurrentShop;
 import org.example.backend.shop.ShopRepository;
 import org.example.backend.product.Product;
 import org.example.backend.product.ProductRepository;
@@ -33,20 +34,23 @@ public class SaleService {
     private final SaleLineRepository saleLineRepository;
     private final StockMovementService stockMovementService;
     private final ShopRepository shopRepository;
+    private final CurrentShop currentShop;
 
     public SaleService(ProductRepository productRepository, UserRepository userRepository,
                         SaleRepository saleRepository, SaleLineRepository saleLineRepository,
-                        StockMovementService stockMovementService, ShopRepository shopRepository) {
+                        StockMovementService stockMovementService, ShopRepository shopRepository,
+                        CurrentShop currentShop) {
         this.productRepository = productRepository;
         this.userRepository = userRepository;
         this.saleRepository = saleRepository;
         this.saleLineRepository = saleLineRepository;
         this.stockMovementService = stockMovementService;
         this.shopRepository = shopRepository;
+        this.currentShop = currentShop;
     }
 
     public List<Product> listSaleableProducts() {
-        return productRepository.findAllByOrderByName().stream().filter(Product::isActive).toList();
+        return productRepository.findByShopOrderByName(currentShop.get()).stream().filter(Product::isActive).toList();
     }
 
     @Transactional
@@ -90,7 +94,7 @@ public class SaleService {
     }
 
     private Product getProduct(Long id) {
-        Product product = productRepository.findById(id)
+        Product product = productRepository.findByIdAndShop(id, currentShop.get())
                 .orElseThrow(() -> new IllegalArgumentException("No product " + id));
         if (!product.isActive()) {
             throw new IllegalArgumentException("\"" + product.getName() + "\" is not available for sale");

@@ -28,7 +28,7 @@ public class ProductManagementService {
     public Product createProduct(String name, ProductUnit unit, BigDecimal price, BigDecimal alertLevel,
                                   BigDecimal cartonWeight) {
         validate(name, unit, price, alertLevel, cartonWeight);
-        if (productRepository.existsByNameIgnoreCase(name)) {
+        if (productRepository.existsByShopAndNameIgnoreCase(currentShop.get(), name)) {
             throw new IllegalArgumentException("A product named \"" + name + "\" already exists");
         }
         Product product = new Product(currentShop.get(), name, unit, price, alertLevel);
@@ -41,7 +41,7 @@ public class ProductManagementService {
                                   BigDecimal cartonWeight) {
         validate(name, unit, price, alertLevel, cartonWeight);
         Product product = getProduct(id);
-        if (productRepository.existsByNameIgnoreCaseAndIdNot(name, id)) {
+        if (productRepository.existsByShopAndNameIgnoreCaseAndIdNot(currentShop.get(), name, id)) {
             throw new IllegalArgumentException("A product named \"" + name + "\" already exists");
         }
         product.setName(name);
@@ -58,11 +58,11 @@ public class ProductManagementService {
     }
 
     public List<Product> listProducts() {
-        return productRepository.findAllByOrderByName();
+        return productRepository.findByShopOrderByName(currentShop.get());
     }
 
     private Product getProduct(Long id) {
-        return productRepository.findById(id)
+        return productRepository.findByIdAndShop(id, currentShop.get())
                 .orElseThrow(() -> new IllegalArgumentException("No product " + id));
     }
 
