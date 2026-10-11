@@ -1,5 +1,9 @@
 package org.example.backend.stock;
 
+import org.example.backend.shop.CurrentShop;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.example.backend.shop.TestShops;
 import org.example.backend.product.Product;
 import org.example.backend.product.ProductRepository;
 import org.example.backend.product.ProductUnit;
@@ -26,6 +30,19 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class WriteOffIntegrationTest {
 
     @Autowired
+    private CurrentShop currentShop;
+
+    @BeforeEach
+    void setCurrentShop() {
+        currentShop.set(TestShops.ONE);
+    }
+
+    @AfterEach
+    void clearCurrentShop() {
+        currentShop.clear();
+    }
+
+    @Autowired
     private UserRepository userRepository;
 
     @Autowired
@@ -36,8 +53,8 @@ class WriteOffIntegrationTest {
 
     @Test
     void recordsAWriteOffWithNote() {
-        User owner = userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
-        Product chicken = productRepository.save(new Product(
+        User owner = userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
+        Product chicken = productRepository.save(new Product(TestShops.ONE,
                 "WriteOff Test Chicken", ProductUnit.KG, new BigDecimal("45.00"), new BigDecimal("10.00")));
 
         StockMovement movement = writeOffService.writeOff(
@@ -55,8 +72,8 @@ class WriteOffIntegrationTest {
 
     @Test
     void allowsMultipleWriteOffsOnTheSameProduct() {
-        User owner = userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
-        Product tinnedTomato = productRepository.save(new Product(
+        User owner = userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
+        Product tinnedTomato = productRepository.save(new Product(TestShops.ONE,
                 "WriteOff Test Tinned Tomato", ProductUnit.UNIT, new BigDecimal("8.00"), new BigDecimal("15.00")));
 
         writeOffService.writeOff(tinnedTomato.getId(), new BigDecimal("3"), "Dented cans", owner);
@@ -70,8 +87,8 @@ class WriteOffIntegrationTest {
 
     @Test
     void rejectsAZeroOrNegativeQuantity() {
-        User owner = userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
-        Product chicken = productRepository.save(new Product(
+        User owner = userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
+        Product chicken = productRepository.save(new Product(TestShops.ONE,
                 "WriteOff Test Chicken", ProductUnit.KG, new BigDecimal("45.00"), new BigDecimal("10.00")));
 
         assertThatThrownBy(() -> writeOffService.writeOff(chicken.getId(), BigDecimal.ZERO, "note", owner))
@@ -82,8 +99,8 @@ class WriteOffIntegrationTest {
 
     @Test
     void rejectsMoreThanTwoDecimalPlaces() {
-        User owner = userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
-        Product chicken = productRepository.save(new Product(
+        User owner = userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
+        Product chicken = productRepository.save(new Product(TestShops.ONE,
                 "WriteOff Test Chicken", ProductUnit.KG, new BigDecimal("45.00"), new BigDecimal("10.00")));
 
         assertThatThrownBy(() -> writeOffService.writeOff(chicken.getId(), new BigDecimal("1.234"), "note", owner))
@@ -93,8 +110,8 @@ class WriteOffIntegrationTest {
 
     @Test
     void rejectsABlankOrMissingNote() {
-        User owner = userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
-        Product chicken = productRepository.save(new Product(
+        User owner = userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
+        Product chicken = productRepository.save(new Product(TestShops.ONE,
                 "WriteOff Test Chicken", ProductUnit.KG, new BigDecimal("45.00"), new BigDecimal("10.00")));
 
         assertThatThrownBy(() -> writeOffService.writeOff(chicken.getId(), new BigDecimal("1"), "  ", owner))
@@ -107,8 +124,8 @@ class WriteOffIntegrationTest {
 
     @Test
     void rejectsAnInactiveProduct() {
-        User owner = userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
-        Product discontinued = productRepository.save(new Product(
+        User owner = userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
+        Product discontinued = productRepository.save(new Product(TestShops.ONE,
                 "WriteOff Test Discontinued", ProductUnit.UNIT, new BigDecimal("5.00"), new BigDecimal("2.00")));
         discontinued.setActive(false);
         productRepository.save(discontinued);

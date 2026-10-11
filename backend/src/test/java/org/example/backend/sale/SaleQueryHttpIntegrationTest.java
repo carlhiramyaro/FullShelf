@@ -1,5 +1,9 @@
 package org.example.backend.sale;
 
+import org.example.backend.shop.CurrentShop;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.example.backend.shop.TestShops;
 import jakarta.persistence.EntityManager;
 import org.example.backend.device.Device;
 import org.example.backend.device.DeviceRepository;
@@ -53,6 +57,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class SaleQueryHttpIntegrationTest {
 
     @Autowired
+    private CurrentShop currentShop;
+
+    @BeforeEach
+    void setCurrentShop() {
+        currentShop.set(TestShops.ONE);
+    }
+
+    @AfterEach
+    void clearCurrentShop() {
+        currentShop.clear();
+    }
+
+    @Autowired
     private MockMvc mockMvc;
 
     @Autowired
@@ -80,8 +97,8 @@ class SaleQueryHttpIntegrationTest {
     private EntityManager entityManager;
 
     private String staffSessionToken() {
-        Device device = deviceRepository.save(new Device(tokenHasher.hash("device-" + System.nanoTime())));
-        User staff = userRepository.save(new User("Sale Query Http Test Staff", UserRole.STAFF));
+        Device device = deviceRepository.save(new Device(TestShops.ONE, tokenHasher.hash("device-" + System.nanoTime())));
+        User staff = userRepository.save(new User(TestShops.ONE, "Sale Query Http Test Staff", UserRole.STAFF));
         String rawToken = tokenHasher.newRawToken();
         staffSessionRepository.save(new StaffSession(staff, device, tokenHasher.hash(rawToken)));
         return rawToken;
@@ -90,9 +107,9 @@ class SaleQueryHttpIntegrationTest {
     @Test
     void staffCanFetchTodaysReceipt() throws Exception {
         String sessionToken = staffSessionToken();
-        Product oil = productRepository.save(new Product(
+        Product oil = productRepository.save(new Product(TestShops.ONE,
                 "Sale Query Http Test Oil", ProductUnit.UNIT, new BigDecimal("25.00"), new BigDecimal("5.00")));
-        User anySaleStaff = userRepository.save(new User("Sale Query Http Test Seller", UserRole.STAFF));
+        User anySaleStaff = userRepository.save(new User(TestShops.ONE, "Sale Query Http Test Seller", UserRole.STAFF));
         SaleService.SaleResult result = saleService.confirmSale(
                 List.of(new SaleService.LineRequest(oil.getId(), BigDecimal.ONE, null)), anySaleStaff.getId());
         entityManager.flush();
@@ -107,9 +124,9 @@ class SaleQueryHttpIntegrationTest {
     @Test
     void staffCannotFetchAnOlderReceipt() throws Exception {
         String sessionToken = staffSessionToken();
-        Product oil = productRepository.save(new Product(
+        Product oil = productRepository.save(new Product(TestShops.ONE,
                 "Sale Query Http Test Oil 2", ProductUnit.UNIT, new BigDecimal("25.00"), new BigDecimal("5.00")));
-        User anySaleStaff = userRepository.save(new User("Sale Query Http Test Seller 2", UserRole.STAFF));
+        User anySaleStaff = userRepository.save(new User(TestShops.ONE, "Sale Query Http Test Seller 2", UserRole.STAFF));
         SaleService.SaleResult result = saleService.confirmSale(
                 List.of(new SaleService.LineRequest(oil.getId(), BigDecimal.ONE, null)), anySaleStaff.getId());
         entityManager.flush();

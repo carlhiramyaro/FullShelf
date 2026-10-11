@@ -1,5 +1,9 @@
 package org.example.backend.stock;
 
+import org.example.backend.shop.CurrentShop;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.example.backend.shop.TestShops;
 import org.example.backend.product.Product;
 import org.example.backend.product.ProductRepository;
 import org.example.backend.product.ProductUnit;
@@ -28,6 +32,19 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class ReverseStockIntegrationTest {
 
     @Autowired
+    private CurrentShop currentShop;
+
+    @BeforeEach
+    void setCurrentShop() {
+        currentShop.set(TestShops.ONE);
+    }
+
+    @AfterEach
+    void clearCurrentShop() {
+        currentShop.clear();
+    }
+
+    @Autowired
     private UserRepository userRepository;
 
     @Autowired
@@ -41,9 +58,9 @@ class ReverseStockIntegrationTest {
 
     @Test
     void reversesAMistypedOpeningLine() {
-        User owner = userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
+        User owner = userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
         Product chicken = productRepository.save(
-                new Product("Reverse Test Chicken", ProductUnit.KG, new BigDecimal("45.00"), new BigDecimal("10.00")));
+                new Product(TestShops.ONE, "Reverse Test Chicken", ProductUnit.KG, new BigDecimal("45.00"), new BigDecimal("10.00")));
         StockMovement mistyped = stockMovementService.record(
                 chicken, new BigDecimal("1000.00"), StockMovementType.OPENING, owner, null, null);
 
@@ -57,9 +74,9 @@ class ReverseStockIntegrationTest {
 
     @Test
     void reversesAReceivedLine() {
-        User owner = userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
+        User owner = userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
         Product oil = productRepository.save(
-                new Product("Reverse Test Cooking Oil", ProductUnit.UNIT, new BigDecimal("25.00"), new BigDecimal("5.00")));
+                new Product(TestShops.ONE, "Reverse Test Cooking Oil", ProductUnit.UNIT, new BigDecimal("25.00"), new BigDecimal("5.00")));
         StockMovement received = stockMovementService.record(
                 oil, new BigDecimal("60.00"), StockMovementType.RECEIVED, owner, null, "6 carton(s)");
 
@@ -71,9 +88,9 @@ class ReverseStockIntegrationTest {
 
     @Test
     void rejectsReversingTheSameLineTwice() {
-        User owner = userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
+        User owner = userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
         Product tinnedTomato = productRepository.save(
-                new Product("Reverse Test Tinned Tomato", ProductUnit.UNIT, new BigDecimal("8.00"), new BigDecimal("15.00")));
+                new Product(TestShops.ONE, "Reverse Test Tinned Tomato", ProductUnit.UNIT, new BigDecimal("8.00"), new BigDecimal("15.00")));
         StockMovement opening = stockMovementService.record(
                 tinnedTomato, new BigDecimal("100.00"), StockMovementType.OPENING, owner, null, null);
         reverseStockService.reverseEntry(opening.getId(), "first reversal", owner);
@@ -85,9 +102,9 @@ class ReverseStockIntegrationTest {
 
     @Test
     void rejectsReversingAWriteOffLine() {
-        User owner = userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
+        User owner = userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
         Product spices = productRepository.save(
-                new Product("Reverse Test Spices", ProductUnit.UNIT, new BigDecimal("12.00"), new BigDecimal("5.00")));
+                new Product(TestShops.ONE, "Reverse Test Spices", ProductUnit.UNIT, new BigDecimal("12.00"), new BigDecimal("5.00")));
         StockMovement writeOff = stockMovementService.record(
                 spices, new BigDecimal("-3.00"), StockMovementType.WRITE_OFF, owner, null, "damaged");
 
@@ -98,9 +115,9 @@ class ReverseStockIntegrationTest {
 
     @Test
     void listsReversibleMovementsAndExcludesAlreadyReversedOnes() {
-        User owner = userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
+        User owner = userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
         Product chicken = productRepository.save(
-                new Product("Reverse Test Beef", ProductUnit.KG, new BigDecimal("50.00"), new BigDecimal("10.00")));
+                new Product(TestShops.ONE, "Reverse Test Beef", ProductUnit.KG, new BigDecimal("50.00"), new BigDecimal("10.00")));
         StockMovement opening = stockMovementService.record(
                 chicken, new BigDecimal("20.00"), StockMovementType.OPENING, owner, null, null);
         StockMovement received = stockMovementService.record(

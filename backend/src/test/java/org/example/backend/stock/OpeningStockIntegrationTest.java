@@ -1,5 +1,9 @@
 package org.example.backend.stock;
 
+import org.example.backend.shop.CurrentShop;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.example.backend.shop.TestShops;
 import org.example.backend.product.Product;
 import org.example.backend.product.ProductRepository;
 import org.example.backend.product.ProductUnit;
@@ -28,6 +32,19 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class OpeningStockIntegrationTest {
 
     @Autowired
+    private CurrentShop currentShop;
+
+    @BeforeEach
+    void setCurrentShop() {
+        currentShop.set(TestShops.ONE);
+    }
+
+    @AfterEach
+    void clearCurrentShop() {
+        currentShop.clear();
+    }
+
+    @Autowired
     private UserRepository userRepository;
 
     @Autowired
@@ -41,9 +58,9 @@ class OpeningStockIntegrationTest {
 
     @Test
     void recordsOpeningBalanceForAFreshProduct() {
-        User owner = userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
+        User owner = userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
         Product chicken = productRepository.save(
-                new Product("Opening Test Chicken", ProductUnit.KG, new BigDecimal("45.00"), new BigDecimal("10.00")));
+                new Product(TestShops.ONE, "Opening Test Chicken", ProductUnit.KG, new BigDecimal("45.00"), new BigDecimal("10.00")));
 
         openingStockService.recordOpeningBalances(Map.of(chicken.getId(), new BigDecimal("42.50")), owner);
 
@@ -59,9 +76,9 @@ class OpeningStockIntegrationTest {
 
     @Test
     void rejectsASecondOpeningEntryForTheSameProduct() {
-        User owner = userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
+        User owner = userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
         Product oil = productRepository.save(
-                new Product("Opening Test Cooking Oil", ProductUnit.UNIT, new BigDecimal("25.00"), new BigDecimal("5.00")));
+                new Product(TestShops.ONE, "Opening Test Cooking Oil", ProductUnit.UNIT, new BigDecimal("25.00"), new BigDecimal("5.00")));
 
         openingStockService.recordOpeningBalances(Map.of(oil.getId(), new BigDecimal("60")), owner);
 
@@ -73,9 +90,9 @@ class OpeningStockIntegrationTest {
 
     @Test
     void allowsReenteringAfterTheOriginalOpeningEntryWasReversed() {
-        User owner = userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
+        User owner = userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
         Product tinnedTomato = productRepository.save(
-                new Product("Opening Test Tinned Tomato", ProductUnit.UNIT, new BigDecimal("8.00"), new BigDecimal("15.00")));
+                new Product(TestShops.ONE, "Opening Test Tinned Tomato", ProductUnit.UNIT, new BigDecimal("8.00"), new BigDecimal("15.00")));
 
         StockMovement mistyped = stockMovementService.record(
                 tinnedTomato, new BigDecimal("1000.00"), StockMovementType.OPENING, owner, null, null);
@@ -95,11 +112,11 @@ class OpeningStockIntegrationTest {
 
     @Test
     void rejectsANegativeQuantityAndWritesNothingElseInTheBatch() {
-        User owner = userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
+        User owner = userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
         Product chicken = productRepository.save(
-                new Product("Opening Test Chicken", ProductUnit.KG, new BigDecimal("45.00"), new BigDecimal("10.00")));
+                new Product(TestShops.ONE, "Opening Test Chicken", ProductUnit.KG, new BigDecimal("45.00"), new BigDecimal("10.00")));
         Product oil = productRepository.save(
-                new Product("Opening Test Cooking Oil", ProductUnit.UNIT, new BigDecimal("25.00"), new BigDecimal("5.00")));
+                new Product(TestShops.ONE, "Opening Test Cooking Oil", ProductUnit.UNIT, new BigDecimal("25.00"), new BigDecimal("5.00")));
 
         assertThatThrownBy(() -> openingStockService.recordOpeningBalances(
                 Map.of(chicken.getId(), new BigDecimal("42.50"), oil.getId(), new BigDecimal("-1")), owner))

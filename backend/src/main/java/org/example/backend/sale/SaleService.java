@@ -1,5 +1,7 @@
 package org.example.backend.sale;
 
+import org.example.backend.shop.CurrentShop;
+import org.example.backend.shop.ShopRepository;
 import org.example.backend.product.Product;
 import org.example.backend.product.ProductRepository;
 import org.example.backend.product.ProductUnit;
@@ -31,19 +33,24 @@ public class SaleService {
     private final SaleRepository saleRepository;
     private final SaleLineRepository saleLineRepository;
     private final StockMovementService stockMovementService;
+    private final ShopRepository shopRepository;
+    private final CurrentShop currentShop;
 
     public SaleService(ProductRepository productRepository, UserRepository userRepository,
                         SaleRepository saleRepository, SaleLineRepository saleLineRepository,
-                        StockMovementService stockMovementService) {
+                        StockMovementService stockMovementService, ShopRepository shopRepository,
+                        CurrentShop currentShop) {
         this.productRepository = productRepository;
         this.userRepository = userRepository;
         this.saleRepository = saleRepository;
         this.saleLineRepository = saleLineRepository;
         this.stockMovementService = stockMovementService;
+        this.shopRepository = shopRepository;
+        this.currentShop = currentShop;
     }
 
     public List<Product> listSaleableProducts() {
-        return productRepository.findAllByOrderByName().stream().filter(Product::isActive).toList();
+        return productRepository.findByShopOrderByName(currentShop.get()).stream().filter(Product::isActive).toList();
     }
 
     @Transactional
@@ -51,7 +58,7 @@ public class SaleService {
         if (lines == null || lines.isEmpty()) {
             throw new IllegalArgumentException("A sale needs at least one line");
         }
-        User staff = userRepository.findById(staffUserId).orElseThrow();
+        User staff = userRepository.findByIdAndShop(staffUserId, currentShop.get()).orElseThrow();
 
         // Resolve and validate every line before writing anything — a sale is
         // one atomic confirm action, so one bad line rejects the whole
@@ -59,7 +66,8 @@ public class SaleService {
         // batch, where a blank line is just skipped).
         List<ResolvedLine> resolvedLines = lines.stream().map(this::resolveLine).toList();
 
-        Sale sale = saleRepository.save(new Sale(staff));
+        Long receiptNumber = shopRepository.nextReceiptNumber(staff.getShop().getId());
+        Sale sale = saleRepository.save(new Sale(staff, receiptNumber));
 
         List<LineResult> lineResults = new ArrayList<>();
         for (ResolvedLine resolved : resolvedLines) {
@@ -71,8 +79,6 @@ public class SaleService {
                     resolved.discount(), resolved.lineTotal()));
         }
 
-        saleRepository.flush();
-        Long receiptNumber = saleRepository.findReceiptNumberById(sale.getId());
         BigDecimal total = lineResults.stream().map(LineResult::lineTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
         return new SaleResult(sale, staff, receiptNumber, lineResults, total);
     }
@@ -88,7 +94,7 @@ public class SaleService {
     }
 
     private Product getProduct(Long id) {
-        Product product = productRepository.findById(id)
+        Product product = productRepository.findByIdAndShop(id, currentShop.get())
                 .orElseThrow(() -> new IllegalArgumentException("No product " + id));
         if (!product.isActive()) {
             throw new IllegalArgumentException("\"" + product.getName() + "\" is not available for sale");

@@ -1,5 +1,9 @@
 package org.example.backend.stock;
 
+import org.example.backend.shop.CurrentShop;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.example.backend.shop.TestShops;
 import org.example.backend.product.Product;
 import org.example.backend.product.ProductRepository;
 import org.example.backend.product.ProductUnit;
@@ -26,6 +30,19 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class ReceiveStockIntegrationTest {
 
     @Autowired
+    private CurrentShop currentShop;
+
+    @BeforeEach
+    void setCurrentShop() {
+        currentShop.set(TestShops.ONE);
+    }
+
+    @AfterEach
+    void clearCurrentShop() {
+        currentShop.clear();
+    }
+
+    @Autowired
     private UserRepository userRepository;
 
     @Autowired
@@ -36,8 +53,8 @@ class ReceiveStockIntegrationTest {
 
     @Test
     void recordsAReceiptAndComputesAShortGap() {
-        User owner = userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
-        Product chicken = productRepository.save(new Product(
+        User owner = userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
+        Product chicken = productRepository.save(new Product(TestShops.ONE,
                 "Receive Test Chicken", ProductUnit.KG, new BigDecimal("45.00"), new BigDecimal("10.00")));
         chicken.setCartonWeight(new BigDecimal("10.00"));
         productRepository.save(chicken);
@@ -56,8 +73,8 @@ class ReceiveStockIntegrationTest {
 
     @Test
     void recordsAReceiptWithNoCartonCountAndNoGap() {
-        User owner = userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
-        Product oil = productRepository.save(new Product(
+        User owner = userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
+        Product oil = productRepository.save(new Product(TestShops.ONE,
                 "Receive Test Cooking Oil", ProductUnit.UNIT, new BigDecimal("25.00"), new BigDecimal("5.00")));
 
         ReceiveStockService.ReceiveResult result =
@@ -73,8 +90,8 @@ class ReceiveStockIntegrationTest {
 
     @Test
     void skipsGapWhenProductHasNoCartonWeightSet() {
-        User owner = userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
-        Product tinnedTomato = productRepository.save(new Product(
+        User owner = userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
+        Product tinnedTomato = productRepository.save(new Product(TestShops.ONE,
                 "Receive Test Tinned Tomato", ProductUnit.UNIT, new BigDecimal("8.00"), new BigDecimal("15.00")));
 
         ReceiveStockService.ReceiveResult result =
@@ -86,8 +103,8 @@ class ReceiveStockIntegrationTest {
 
     @Test
     void allowsReceivingTheSameProductMultipleTimes() {
-        User owner = userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
-        Product chicken = productRepository.save(new Product(
+        User owner = userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
+        Product chicken = productRepository.save(new Product(TestShops.ONE,
                 "Receive Test Chicken", ProductUnit.KG, new BigDecimal("45.00"), new BigDecimal("10.00")));
 
         receiveStockService.receive(chicken.getId(), null, new BigDecimal("50.00"), owner);
@@ -101,8 +118,8 @@ class ReceiveStockIntegrationTest {
 
     @Test
     void rejectsAZeroOrNegativeActualQuantity() {
-        User owner = userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
-        Product chicken = productRepository.save(new Product(
+        User owner = userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
+        Product chicken = productRepository.save(new Product(TestShops.ONE,
                 "Receive Test Chicken", ProductUnit.KG, new BigDecimal("45.00"), new BigDecimal("10.00")));
 
         assertThatThrownBy(() -> receiveStockService.receive(chicken.getId(), null, BigDecimal.ZERO, owner))
@@ -113,8 +130,8 @@ class ReceiveStockIntegrationTest {
 
     @Test
     void rejectsMoreThanTwoDecimalPlaces() {
-        User owner = userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
-        Product chicken = productRepository.save(new Product(
+        User owner = userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
+        Product chicken = productRepository.save(new Product(TestShops.ONE,
                 "Receive Test Chicken", ProductUnit.KG, new BigDecimal("45.00"), new BigDecimal("10.00")));
 
         assertThatThrownBy(() -> receiveStockService.receive(chicken.getId(), null, new BigDecimal("1.234"), owner))
@@ -124,8 +141,8 @@ class ReceiveStockIntegrationTest {
 
     @Test
     void rejectsAZeroOrNegativeCartonCount() {
-        User owner = userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
-        Product chicken = productRepository.save(new Product(
+        User owner = userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
+        Product chicken = productRepository.save(new Product(TestShops.ONE,
                 "Receive Test Chicken", ProductUnit.KG, new BigDecimal("45.00"), new BigDecimal("10.00")));
 
         assertThatThrownBy(() -> receiveStockService.receive(chicken.getId(), 0, new BigDecimal("10"), owner))
@@ -136,8 +153,8 @@ class ReceiveStockIntegrationTest {
 
     @Test
     void rejectsAnInactiveProduct() {
-        User owner = userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
-        Product discontinued = productRepository.save(new Product(
+        User owner = userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
+        Product discontinued = productRepository.save(new Product(TestShops.ONE,
                 "Receive Test Discontinued", ProductUnit.UNIT, new BigDecimal("5.00"), new BigDecimal("2.00")));
         discontinued.setActive(false);
         productRepository.save(discontinued);

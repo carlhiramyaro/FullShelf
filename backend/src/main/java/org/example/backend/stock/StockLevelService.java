@@ -2,6 +2,7 @@ package org.example.backend.stock;
 
 import org.example.backend.product.Product;
 import org.example.backend.product.ProductRepository;
+import org.example.backend.shop.CurrentShop;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -21,14 +22,17 @@ public class StockLevelService {
 
     private final ProductRepository productRepository;
     private final StockBalanceService stockBalanceService;
+    private final CurrentShop currentShop;
 
-    public StockLevelService(ProductRepository productRepository, StockBalanceService stockBalanceService) {
+    public StockLevelService(ProductRepository productRepository, StockBalanceService stockBalanceService,
+                                CurrentShop currentShop) {
         this.productRepository = productRepository;
         this.stockBalanceService = stockBalanceService;
+        this.currentShop = currentShop;
     }
 
     public List<ProductStockLevel> listLevels() {
-        return productRepository.findAllByOrderByName().stream()
+        return productRepository.findByShopOrderByName(currentShop.get()).stream()
                 .filter(Product::isActive)
                 .map(product -> {
                     BigDecimal balance = stockBalanceService.currentBalance(product.getId());

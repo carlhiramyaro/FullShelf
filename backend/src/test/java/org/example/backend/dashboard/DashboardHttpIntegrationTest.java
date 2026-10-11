@@ -1,5 +1,6 @@
 package org.example.backend.dashboard;
 
+import org.example.backend.shop.TestShops;
 import org.example.backend.security.OwnerJwtAuthoritiesConverter;
 import org.example.backend.user.User;
 import org.example.backend.user.UserRepository;
@@ -43,7 +44,7 @@ class DashboardHttpIntegrationTest {
 
     @Test
     void ownerGetsTheSummaryShape() throws Exception {
-        User owner = new User("Aunt Amerley", UserRole.OWNER);
+        User owner = new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER);
         owner.setClerkUserId("clerk_owner_dashboard");
         userRepository.save(owner);
 

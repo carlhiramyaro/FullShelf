@@ -2,6 +2,7 @@ package org.example.backend.device;
 
 import org.example.backend.security.TokenHasher;
 import org.example.backend.user.User;
+import org.example.backend.shop.CurrentShop;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,10 +28,13 @@ public class DevicePairingService {
     private final DeviceRepository deviceRepository;
     private final DevicePairingCodeRepository pairingCodeRepository;
     private final TokenHasher tokenHasher;
+    private final CurrentShop currentShop;
     private final SecureRandom random = new SecureRandom();
 
     public DevicePairingService(DeviceRepository deviceRepository,
-                                 DevicePairingCodeRepository pairingCodeRepository, TokenHasher tokenHasher) {
+                                 DevicePairingCodeRepository pairingCodeRepository, TokenHasher tokenHasher,
+                                 CurrentShop currentShop) {
+        this.currentShop = currentShop;
         this.deviceRepository = deviceRepository;
         this.pairingCodeRepository = pairingCodeRepository;
         this.tokenHasher = tokenHasher;
@@ -67,13 +71,13 @@ public class DevicePairingService {
         pairingCode.setRedeemedAt(Instant.now());
 
         String rawDeviceToken = tokenHasher.newRawToken();
-        deviceRepository.save(new Device(tokenHasher.hash(rawDeviceToken)));
+        deviceRepository.save(new Device(pairingCode.getShop(), tokenHasher.hash(rawDeviceToken)));
         return rawDeviceToken;
     }
 
     @Transactional
     public void revokeDevice(Long deviceId) {
-        Device device = deviceRepository.findById(deviceId)
+        Device device = deviceRepository.findByIdAndShop(deviceId, currentShop.get())
                 .orElseThrow(() -> new IllegalArgumentException("No device " + deviceId));
         device.setRevoked(true);
     }

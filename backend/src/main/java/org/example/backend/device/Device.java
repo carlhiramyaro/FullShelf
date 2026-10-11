@@ -1,5 +1,9 @@
 package org.example.backend.device;
 
+import org.example.backend.shop.Shop;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -27,11 +31,20 @@ public class Device {
     @Column(name = "paired_at", nullable = false, updatable = false)
     private Instant pairedAt;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "shop_id", nullable = false, updatable = false)
+    private Shop shop;
+
     protected Device() {
     }
 
-    public Device(String tokenHash) {
+    public Device(Shop shop, String tokenHash) {
+        this.shop = shop;
         this.tokenHash = tokenHash;
+    }
+
+    public Shop getShop() {
+        return shop;
     }
 
     public Long getId() {

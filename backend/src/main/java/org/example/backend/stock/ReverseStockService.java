@@ -2,6 +2,7 @@ package org.example.backend.stock;
 
 import org.example.backend.product.Product;
 import org.example.backend.product.ProductRepository;
+import org.example.backend.shop.CurrentShop;
 import org.example.backend.user.User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,19 +31,22 @@ public class ReverseStockService {
     private final StockMovementRepository stockMovementRepository;
     private final StockMovementService stockMovementService;
     private final StockBalanceService stockBalanceService;
+    private final CurrentShop currentShop;
 
     public ReverseStockService(ProductRepository productRepository,
                                 StockMovementRepository stockMovementRepository,
                                 StockMovementService stockMovementService,
-                                StockBalanceService stockBalanceService) {
+                                StockBalanceService stockBalanceService,
+                                CurrentShop currentShop) {
         this.productRepository = productRepository;
         this.stockMovementRepository = stockMovementRepository;
         this.stockMovementService = stockMovementService;
         this.stockBalanceService = stockBalanceService;
+        this.currentShop = currentShop;
     }
 
     public List<ProductReverseStatus> listStatus() {
-        return productRepository.findAllByOrderByName().stream()
+        return productRepository.findByShopOrderByName(currentShop.get()).stream()
                 .filter(Product::isActive)
                 .map(product -> new ProductReverseStatus(product, reversibleMovements(product.getId()).size(),
                         stockBalanceService.currentBalance(product.getId())))
@@ -50,6 +54,8 @@ public class ReverseStockService {
     }
 
     public List<StockMovement> reversibleMovements(Long productId) {
+        productRepository.findByIdAndShop(productId, currentShop.get())
+                .orElseThrow(() -> new IllegalArgumentException("No product " + productId));
         return stockMovementRepository.findByProductIdAndTypeInOrderByCreatedAtDesc(productId, REVERSIBLE_TYPES)
                 .stream()
                 .filter(movement -> !stockMovementRepository.existsByReversedMovementId(movement.getId()))
@@ -68,7 +74,7 @@ public class ReverseStockService {
     }
 
     private StockMovement getMovement(Long id) {
-        return stockMovementRepository.findById(id)
+        return stockMovementRepository.findByIdAndShop(id, currentShop.get())
                 .orElseThrow(() -> new IllegalArgumentException("No stock movement " + id));
     }
 

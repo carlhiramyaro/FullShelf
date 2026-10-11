@@ -1,5 +1,8 @@
 package org.example.backend.notify;
 
+import org.example.backend.shop.Shop;
+import org.example.backend.shop.ShopRepository;
+import org.example.backend.shop.TestShops;
 import org.example.backend.user.User;
 import org.example.backend.user.UserRepository;
 import org.example.backend.user.UserRole;
@@ -35,6 +38,9 @@ class SmsNotifierIntegrationTest {
     private UserRepository userRepository;
 
     @Autowired
+    private ShopRepository shopRepository;
+
+    @Autowired
     private SmsNotifier smsNotifier;
 
     @Autowired
@@ -48,11 +54,11 @@ class SmsNotifierIntegrationTest {
 
     @Test
     void sendsToTheOwnersConfiguredPhoneNumber() {
-        User owner = new User("Aunt Amerley", UserRole.OWNER);
+        User owner = new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER);
         owner.setPhoneNumber("+233241234567");
         userRepository.save(owner);
 
-        smsNotifier.send("Chicken is at 5.00 KG (alert level 10.00)");
+        smsNotifier.send(TestShops.ONE, "Chicken is at 5.00 KG (alert level 10.00)");
 
         assertThat(smsGateway.sent).hasSize(1);
         assertThat(smsGateway.sent.get(0).to()).isEqualTo("+233241234567");
@@ -61,37 +67,53 @@ class SmsNotifierIntegrationTest {
 
     @Test
     void ignoresADeactivatedOwnerEvenIfItSortsFirstAndHasAPhoneNumber() {
-        User stale = new User("Aaa stale owner", UserRole.OWNER);
+        User stale = new User(TestShops.ONE, "Aaa stale owner", UserRole.OWNER);
         stale.setPhoneNumber("+233200000000");
         stale.setActive(false);
         userRepository.save(stale);
-        User owner = new User("Aunt Amerley", UserRole.OWNER);
+        User owner = new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER);
         owner.setPhoneNumber("+233241234567");
         userRepository.save(owner);
 
-        smsNotifier.send("Chicken is at 5.00 KG (alert level 10.00)");
+        smsNotifier.send(TestShops.ONE, "Chicken is at 5.00 KG (alert level 10.00)");
 
         assertThat(smsGateway.sent).hasSize(1);
         assertThat(smsGateway.sent.get(0).to()).isEqualTo("+233241234567");
     }
 
     @Test
-    void doesNothingWhenOwnerHasNoPhoneNumberSetYet() {
-        userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
+    void textsOnlyTheOwnerOfTheShopThatCrossed() {
+        Shop two = shopRepository.saveAndFlush(new Shop("Notifier Shop Two"));
+        User ownerOne = new User(TestShops.ONE, "Aaa Owner One", UserRole.OWNER);
+        ownerOne.setPhoneNumber("+233200000001");
+        userRepository.save(ownerOne);
+        User ownerTwo = new User(two, "Zzz Owner Two", UserRole.OWNER);
+        ownerTwo.setPhoneNumber("+233200000002");
+        userRepository.save(ownerTwo);
 
-        smsNotifier.send("Chicken is at 5.00 KG (alert level 10.00)");
+        smsNotifier.send(two, "Chicken is at 5.00 KG (alert level 10.00)");
+
+        assertThat(smsGateway.sent).hasSize(1);
+        assertThat(smsGateway.sent.get(0).to()).isEqualTo("+233200000002");
+    }
+
+    @Test
+    void doesNothingWhenOwnerHasNoPhoneNumberSetYet() {
+        userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
+
+        smsNotifier.send(TestShops.ONE, "Chicken is at 5.00 KG (alert level 10.00)");
 
         assertThat(smsGateway.sent).isEmpty();
     }
 
     @Test
     void swallowsAGatewayFailureRatherThanPropagatingIt() {
-        User owner = new User("Aunt Amerley", UserRole.OWNER);
+        User owner = new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER);
         owner.setPhoneNumber("+233241234567");
         userRepository.save(owner);
         smsGateway.failNext = true;
 
-        assertThatCode(() -> smsNotifier.send("Chicken is at 5.00 KG (alert level 10.00)"))
+        assertThatCode(() -> smsNotifier.send(TestShops.ONE, "Chicken is at 5.00 KG (alert level 10.00)"))
                 .doesNotThrowAnyException();
     }
 

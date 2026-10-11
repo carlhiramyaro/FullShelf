@@ -1,5 +1,11 @@
 package org.example.backend.stock;
 
+import org.example.backend.shop.CurrentShop;
+import org.example.backend.shop.Shop;
+import org.example.backend.shop.ShopRepository;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.example.backend.shop.TestShops;
 import org.example.backend.notify.Notifier;
 import org.example.backend.product.Product;
 import org.example.backend.product.ProductRepository;
@@ -37,6 +43,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 class StockCrossingIntegrationTest {
 
     @Autowired
+    private CurrentShop currentShop;
+
+    @BeforeEach
+    void setCurrentShop() {
+        currentShop.set(TestShops.ONE);
+    }
+
+    @AfterEach
+    void clearCurrentShop() {
+        currentShop.clear();
+    }
+
+    @Autowired
     private UserRepository userRepository;
 
     @Autowired
@@ -51,10 +70,36 @@ class StockCrossingIntegrationTest {
     @Autowired
     private RecordingNotifier notifier;
 
+    @Autowired
+    private ShopRepository shopRepository;
+
+    @Test
+    void sameProductNameInTwoShopsAlertsEachShopSeparately() {
+        Shop two = shopRepository.saveAndFlush(new Shop("Crossing Shop Two"));
+        User ownerOne = userRepository.save(new User(TestShops.ONE, "Crossing Owner One", UserRole.OWNER));
+        User ownerTwo = userRepository.save(new User(two, "Crossing Owner Two", UserRole.OWNER));
+        Product inOne = productRepository.save(new Product(TestShops.ONE,
+                "Crossing Shared Name", ProductUnit.UNIT, new BigDecimal("8.00"), new BigDecimal("10.00")));
+        Product inTwo = productRepository.save(new Product(two,
+                "Crossing Shared Name", ProductUnit.UNIT, new BigDecimal("8.00"), new BigDecimal("10.00")));
+        receiveStockService.receive(inOne.getId(), null, new BigDecimal("20"), ownerOne);
+        currentShop.set(two);
+        receiveStockService.receive(inTwo.getId(), null, new BigDecimal("20"), ownerTwo);
+        notifier.messages.clear();
+        notifier.shops.clear();
+
+        writeOffService.writeOff(inTwo.getId(), new BigDecimal("15"), "damaged", ownerTwo);
+
+        assertThat(notifier.shops).extracting(Shop::getId).containsExactly(two.getId());
+        currentShop.set(TestShops.ONE);
+        writeOffService.writeOff(inOne.getId(), new BigDecimal("15"), "damaged", ownerOne);
+        assertThat(notifier.shops).extracting(Shop::getId).containsExactly(two.getId(), TestShops.ONE.getId());
+    }
+
     @Test
     void firesOnceWhenBalanceCrossesBelowAlertLevelAndNotAgainWhileStillBelow() {
-        User owner = userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
-        Product chicken = productRepository.save(new Product(
+        User owner = userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
+        Product chicken = productRepository.save(new Product(TestShops.ONE,
                 "Crossing Test Chicken", ProductUnit.KG, new BigDecimal("45.00"), new BigDecimal("10.00")));
         receiveStockService.receive(chicken.getId(), null, new BigDecimal("20.00"), owner);
         notifier.messages.clear();
@@ -69,8 +114,8 @@ class StockCrossingIntegrationTest {
 
     @Test
     void doesNotFireWhileBalanceStaysAboveAlertLevel() {
-        User owner = userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
-        Product oil = productRepository.save(new Product(
+        User owner = userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
+        Product oil = productRepository.save(new Product(TestShops.ONE,
                 "Crossing Test Oil", ProductUnit.UNIT, new BigDecimal("25.00"), new BigDecimal("5.00")));
         receiveStockService.receive(oil.getId(), null, new BigDecimal("20"), owner);
         notifier.messages.clear();
@@ -82,8 +127,8 @@ class StockCrossingIntegrationTest {
 
     @Test
     void receivingResetsSoALaterCrossingFiresAgain() {
-        User owner = userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
-        Product tinnedTomato = productRepository.save(new Product(
+        User owner = userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
+        Product tinnedTomato = productRepository.save(new Product(TestShops.ONE,
                 "Crossing Test Tinned Tomato", ProductUnit.UNIT, new BigDecimal("8.00"), new BigDecimal("10.00")));
         receiveStockService.receive(tinnedTomato.getId(), null, new BigDecimal("20"), owner);
         notifier.messages.clear();
@@ -110,9 +155,11 @@ class StockCrossingIntegrationTest {
     static class RecordingNotifier implements Notifier {
 
         final List<String> messages = new ArrayList<>();
+        final List<Shop> shops = new ArrayList<>();
 
         @Override
-        public void send(String message) {
+        public void send(Shop shop, String message) {
+            shops.add(shop);
             messages.add(message);
         }
     }

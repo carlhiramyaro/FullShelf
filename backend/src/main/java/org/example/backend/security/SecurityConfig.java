@@ -10,12 +10,16 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.example.backend.shop.CurrentShop;
+import org.example.backend.user.UserRepository;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 /**
- * Three independently-scoped filter chains: /api/owner/** is Clerk-JWT-only,
+ * Four independently-scoped filter chains: /api/owner/** is Clerk-JWT-only,
+ * /api/admin/** is Clerk-JWT for the one platform-admin id,
  * /api/staff/** is gated by StaffAccessFilter's device/session tokens (a
  * separate scheme from Clerk, per CLAUDE.md — staff use custom PIN
  * sessions), and everything else (including the public /api/devices/pair)
@@ -27,11 +31,14 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final OwnerJwtAuthoritiesConverter ownerJwtAuthoritiesConverter;
+    private final AdminJwtAuthoritiesConverter adminJwtAuthoritiesConverter;
     private final StaffAccessFilter staffAccessFilter;
 
     public SecurityConfig(OwnerJwtAuthoritiesConverter ownerJwtAuthoritiesConverter,
+                           AdminJwtAuthoritiesConverter adminJwtAuthoritiesConverter,
                            StaffAccessFilter staffAccessFilter) {
         this.ownerJwtAuthoritiesConverter = ownerJwtAuthoritiesConverter;
+        this.adminJwtAuthoritiesConverter = adminJwtAuthoritiesConverter;
         this.staffAccessFilter = staffAccessFilter;
     }
 
@@ -57,12 +64,36 @@ public class SecurityConfig {
 
     @Bean
     @Order(1)
-    public SecurityFilterChain ownerFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain ownerFilterChain(HttpSecurity http, UserRepository userRepository,
+                                                 CurrentShop currentShop) throws Exception {
         JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
         jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(ownerJwtAuthoritiesConverter);
 
         http.securityMatcher("/api/owner/**")
                 .authorizeHttpRequests(authorize -> authorize.anyRequest().hasRole("OWNER"))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .csrf(csrf -> csrf.disable())
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(
+                        jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter)))
+                .addFilterAfter(new OwnerShopFilter(userRepository, currentShop),
+                        BearerTokenAuthenticationFilter.class);
+
+        return http.build();
+    }
+
+    /**
+     * The platform admin (Carl): same Clerk JWKS as owners, but authorised by
+     * one Clerk user id from configuration, with no shop attached. No
+     * OwnerShopFilter, so CurrentShop is never set on these routes.
+     */
+    @Bean
+    @Order(2)
+    public SecurityFilterChain adminFilterChain(HttpSecurity http) throws Exception {
+        JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
+        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(adminJwtAuthoritiesConverter);
+
+        http.securityMatcher("/api/admin/**")
+                .authorizeHttpRequests(authorize -> authorize.anyRequest().hasRole("ADMIN"))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .csrf(csrf -> csrf.disable())
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(
@@ -72,7 +103,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    @Order(2)
+    @Order(3)
     public SecurityFilterChain staffFilterChain(HttpSecurity http) throws Exception {
         http.securityMatcher("/api/staff/**")
                 .authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated())
@@ -89,7 +120,7 @@ public class SecurityConfig {
     // Left open rather than defaulting to deny-all, which would also block
     // Spring Boot's own error-handling paths for routes not yet built.
     @Bean
-    @Order(3)
+    @Order(4)
     public SecurityFilterChain defaultFilterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll())
                 .csrf(csrf -> csrf.disable())

@@ -5,6 +5,7 @@ import org.example.backend.stock.StockMovementRepository;
 import org.example.backend.stock.StockMovementService;
 import org.example.backend.stock.StockMovementType;
 import org.example.backend.user.User;
+import org.example.backend.shop.CurrentShop;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,10 +28,12 @@ public class VoidSaleService {
     private final SaleLineRepository saleLineRepository;
     private final StockMovementRepository stockMovementRepository;
     private final StockMovementService stockMovementService;
+    private final CurrentShop currentShop;
 
     public VoidSaleService(SaleRepository saleRepository, SaleLineRepository saleLineRepository,
                             StockMovementRepository stockMovementRepository,
-                            StockMovementService stockMovementService) {
+                            StockMovementService stockMovementService, CurrentShop currentShop) {
+        this.currentShop = currentShop;
         this.saleRepository = saleRepository;
         this.saleLineRepository = saleLineRepository;
         this.stockMovementRepository = stockMovementRepository;
@@ -39,7 +42,7 @@ public class VoidSaleService {
 
     @Transactional
     public Sale voidSale(Long receiptNumber, String note, User owner) {
-        Sale sale = saleRepository.findByReceiptNumber(receiptNumber)
+        Sale sale = saleRepository.findByShopAndReceiptNumber(currentShop.get(), receiptNumber)
                 .orElseThrow(() -> new IllegalArgumentException("No sale with receipt number " + receiptNumber));
         if (sale.isVoided()) {
             throw new IllegalStateException("Sale " + receiptNumber + " has already been voided");

@@ -1,5 +1,6 @@
 package org.example.backend.notify;
 
+import org.example.backend.shop.Shop;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -17,7 +18,7 @@ public class LoggingNotifier implements Notifier {
     private static final Logger log = LoggerFactory.getLogger(LoggingNotifier.class);
 
     @Override
-    public void send(String message) {
-        log.warn("ALERT (no SMS provider configured yet): {}", message);
+    public void send(Shop shop, String message) {
+        log.warn("ALERT for shop {} (no SMS provider configured yet): {}", shop.getName(), message);
     }
 }

@@ -1,5 +1,6 @@
 package org.example.backend.stock;
 
+import org.example.backend.shop.Shop;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -65,14 +66,23 @@ public class StockMovement {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "shop_id", nullable = false, updatable = false)
+    private Shop shop;
+
     protected StockMovement() {
     }
 
     public StockMovement(Product product, BigDecimal quantity, StockMovementType type, User performedBy) {
         this.product = product;
+        this.shop = product.getShop();
         this.quantity = quantity;
         this.type = type;
         this.performedBy = performedBy;
+    }
+
+    public Shop getShop() {
+        return shop;
     }
 
     public Long getId() {

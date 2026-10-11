@@ -21,8 +21,8 @@ import java.util.regex.Pattern;
  * to confirm "am I logged in as owner" once real feature routes land.
  *
  * /api/owner/me/phone lets her set the number SmsNotifier sends alerts to.
- * There's exactly one owner for the life of this app (see
- * OwnerBootstrapRunner), so this is a one-field update on that same row, not
+ * Each shop has exactly one active owner (see OwnerLinkService), so this is
+ * a one-field update on the caller's own row, not
  * a dedicated settings service — a new service class for one regex check and
  * one save would be abstraction this endpoint doesn't need.
  */
@@ -30,7 +30,7 @@ import java.util.regex.Pattern;
 @RequestMapping("/api/owner")
 public class OwnerController {
 
-    private static final Pattern E164 = Pattern.compile("^\\+[1-9]\\d{7,14}$");
+    public static final Pattern E164 = Pattern.compile("^\\+[1-9]\\d{7,14}$");
 
     private final UserRepository userRepository;
 

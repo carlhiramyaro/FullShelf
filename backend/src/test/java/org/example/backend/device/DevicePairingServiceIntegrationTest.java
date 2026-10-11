@@ -1,8 +1,12 @@
 package org.example.backend.device;
 
+import org.example.backend.shop.CurrentShop;
+import org.example.backend.shop.TestShops;
 import org.example.backend.user.User;
 import org.example.backend.user.UserRepository;
 import org.example.backend.user.UserRole;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -29,9 +33,22 @@ class DevicePairingServiceIntegrationTest {
     @Autowired
     private DeviceRepository deviceRepository;
 
+    @Autowired
+    private CurrentShop currentShop;
+
+    @BeforeEach
+    void setCurrentShop() {
+        currentShop.set(TestShops.ONE);
+    }
+
+    @AfterEach
+    void clearCurrentShop() {
+        currentShop.clear();
+    }
+
     @Test
     void redeemingAFreshCodePairsANewUnrevokedDevice() {
-        User owner = userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
+        User owner = userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
         String code = devicePairingService.generateCode(owner);
 
         String deviceToken = devicePairingService.redeemCode(code);
@@ -43,7 +60,7 @@ class DevicePairingServiceIntegrationTest {
 
     @Test
     void redeemingTheSameCodeTwiceIsRejected() {
-        User owner = userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
+        User owner = userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
         String code = devicePairingService.generateCode(owner);
         devicePairingService.redeemCode(code);
 
@@ -59,7 +76,7 @@ class DevicePairingServiceIntegrationTest {
 
     @Test
     void revokingADeviceStopsItBeingPaired() {
-        User owner = userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
+        User owner = userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
         String code = devicePairingService.generateCode(owner);
         devicePairingService.redeemCode(code);
         Long deviceId = deviceRepository.findAll().get(0).getId();

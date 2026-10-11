@@ -2,8 +2,12 @@ package org.example.backend.device;
 
 import org.example.backend.user.User;
 import org.example.backend.user.UserRepository;
+import org.example.backend.shop.CurrentShop;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,9 +28,11 @@ public class DeviceManagementController {
     private final DevicePairingService devicePairingService;
     private final DeviceRepository deviceRepository;
     private final UserRepository userRepository;
+    private final CurrentShop currentShop;
 
     public DeviceManagementController(DevicePairingService devicePairingService, DeviceRepository deviceRepository,
-                                       UserRepository userRepository) {
+                                       UserRepository userRepository, CurrentShop currentShop) {
+        this.currentShop = currentShop;
         this.devicePairingService = devicePairingService;
         this.deviceRepository = deviceRepository;
         this.userRepository = userRepository;
@@ -41,12 +47,24 @@ public class DeviceManagementController {
 
     @GetMapping
     public List<DeviceResponse> list() {
-        return deviceRepository.findAll().stream().map(DeviceResponse::from).toList();
+        return deviceRepository.findByShopOrderById(currentShop.get()).stream().map(DeviceResponse::from).toList();
     }
 
     @PostMapping("/{id}/revoke")
     public void revoke(@PathVariable Long id) {
         devicePairingService.revokeDevice(id);
+    }
+
+    // Bad input and "no such id in your shop" both land here as a 400, the
+    // same convention as the other owner controllers (G6: another shop's id
+    // must look exactly like one that doesn't exist, not a 500).
+    @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleBadInput(IllegalArgumentException ex) {
+        return new ErrorResponse(ex.getMessage());
+    }
+
+    public record ErrorResponse(String message) {
     }
 
     public record PairingCodeResponse(String code) {

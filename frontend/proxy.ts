@@ -5,7 +5,7 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 // the backend's own Clerk-JWT enforcement on /api/owner/** which is the real
 // security boundary. /shop is deliberately left out: it authenticates via
 // device/PIN tokens, a separate scheme from Clerk (see CLAUDE.md).
-const isOwnerRoute = createRouteMatcher(["/owner(.*)"]);
+const isOwnerRoute = createRouteMatcher(["/owner(.*)", "/admin(.*)"]);
 
 export default clerkMiddleware(async (auth, req) => {
   if (isOwnerRoute(req)) {

@@ -1,5 +1,9 @@
 package org.example.backend.dashboard;
 
+import org.example.backend.shop.CurrentShop;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.example.backend.shop.TestShops;
 import jakarta.persistence.EntityManager;
 import org.example.backend.product.Product;
 import org.example.backend.product.ProductRepository;
@@ -38,6 +42,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 class DashboardIntegrationTest {
 
     @Autowired
+    private CurrentShop currentShop;
+
+    @BeforeEach
+    void setCurrentShop() {
+        currentShop.set(TestShops.ONE);
+    }
+
+    @AfterEach
+    void clearCurrentShop() {
+        currentShop.clear();
+    }
+
+    @Autowired
     private UserRepository userRepository;
 
     @Autowired
@@ -71,9 +88,9 @@ class DashboardIntegrationTest {
         // own decision doc already flags for this app's tests).
         SaleQueryService.SaleTotals before = dashboardService.summary().totals();
 
-        User owner = userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
-        User staff = userRepository.save(new User("Dashboard Test Staff", UserRole.STAFF));
-        Product oil = productRepository.save(new Product(
+        User owner = userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
+        User staff = userRepository.save(new User(TestShops.ONE, "Dashboard Test Staff", UserRole.STAFF));
+        Product oil = productRepository.save(new Product(TestShops.ONE,
                 "Dashboard Test Oil", ProductUnit.UNIT, new BigDecimal("25.00"), new BigDecimal("5.00")));
 
         // Counted: 2 units at 25.00 with a 5.00 discount -> lineTotal 45.00
@@ -113,17 +130,17 @@ class DashboardIntegrationTest {
 
     @Test
     void splitsLowAndNegativeStockFromStockLevelService() {
-        User owner = userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
-        Product low = productRepository.save(new Product(
+        User owner = userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
+        Product low = productRepository.save(new Product(TestShops.ONE,
                 "Dashboard Test Low Product", ProductUnit.KG, new BigDecimal("45.00"), new BigDecimal("10.00")));
         stockMovementService.record(low, new BigDecimal("5.00"), StockMovementType.OPENING, owner, null, null);
 
-        Product negative = productRepository.save(new Product(
+        Product negative = productRepository.save(new Product(TestShops.ONE,
                 "Dashboard Test Negative Product", ProductUnit.UNIT, new BigDecimal("10.00"), new BigDecimal("5.00")));
         stockMovementService.record(negative, new BigDecimal("2.00"), StockMovementType.OPENING, owner, null, null);
         stockMovementService.record(negative, new BigDecimal("-9.00"), StockMovementType.SALE, owner, null, null);
 
-        Product ok = productRepository.save(new Product(
+        Product ok = productRepository.save(new Product(TestShops.ONE,
                 "Dashboard Test Ok Product", ProductUnit.UNIT, new BigDecimal("8.00"), new BigDecimal("5.00")));
         stockMovementService.record(ok, new BigDecimal("50.00"), StockMovementType.OPENING, owner, null, null);
 

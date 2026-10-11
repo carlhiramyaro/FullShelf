@@ -6,6 +6,7 @@ import org.example.backend.security.TokenHasher;
 import org.example.backend.user.User;
 import org.example.backend.user.UserRepository;
 import org.example.backend.user.UserRole;
+import org.example.backend.shop.CurrentShop;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,10 +31,12 @@ public class StaffAuthService {
     private final StaffSessionRepository staffSessionRepository;
     private final PasswordEncoder passwordEncoder;
     private final TokenHasher tokenHasher;
+    private final CurrentShop currentShop;
 
     public StaffAuthService(UserRepository userRepository, DeviceRepository deviceRepository,
                              StaffSessionRepository staffSessionRepository, PasswordEncoder passwordEncoder,
-                             TokenHasher tokenHasher) {
+                             TokenHasher tokenHasher, CurrentShop currentShop) {
+        this.currentShop = currentShop;
         this.userRepository = userRepository;
         this.deviceRepository = deviceRepository;
         this.staffSessionRepository = staffSessionRepository;
@@ -42,14 +45,14 @@ public class StaffAuthService {
     }
 
     public List<User> roster() {
-        return userRepository.findByRoleAndActiveTrueOrderByName(UserRole.STAFF);
+        return userRepository.findByShopAndRoleAndActiveTrueOrderByName(currentShop.get(), UserRole.STAFF);
     }
 
     @Transactional
     public String login(Long deviceId, Long staffId, String pin) {
         Device device = deviceRepository.getReferenceById(deviceId);
 
-        User staff = userRepository.findById(staffId)
+        User staff = userRepository.findByIdAndShop(staffId, device.getShop())
                 .filter(u -> u.getRole() == UserRole.STAFF && u.isActive())
                 .orElseThrow(() -> new InvalidPinException("Incorrect PIN"));
 

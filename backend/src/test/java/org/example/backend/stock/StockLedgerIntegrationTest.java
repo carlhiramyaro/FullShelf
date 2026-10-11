@@ -1,5 +1,6 @@
 package org.example.backend.stock;
 
+import org.example.backend.shop.TestShops;
 import org.example.backend.product.Product;
 import org.example.backend.product.ProductRepository;
 import org.example.backend.product.ProductUnit;
@@ -41,9 +42,9 @@ class StockLedgerIntegrationTest {
 
     @Test
     void balanceReflectsOpeningReceivedSaleAndWriteOff() {
-        User owner = userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
+        User owner = userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
         Product chicken = productRepository.save(
-                new Product("Chicken", ProductUnit.KG, new BigDecimal("45.00"), new BigDecimal("10.00")));
+                new Product(TestShops.ONE, "Chicken", ProductUnit.KG, new BigDecimal("45.00"), new BigDecimal("10.00")));
 
         stockMovementService.record(chicken, new BigDecimal("42.50"), StockMovementType.OPENING, owner, null, null);
         stockMovementService.record(chicken, new BigDecimal("20.00"), StockMovementType.RECEIVED, owner, null, null);
@@ -55,9 +56,9 @@ class StockLedgerIntegrationTest {
 
     @Test
     void reversingAMovementNegatesItAndLeavesTheOriginalVisible() {
-        User owner = userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
+        User owner = userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
         Product tinnedTomato = productRepository.save(
-                new Product("Tinned tomato", ProductUnit.UNIT, new BigDecimal("8.00"), new BigDecimal("15.00")));
+                new Product(TestShops.ONE, "Tinned tomato", ProductUnit.UNIT, new BigDecimal("8.00"), new BigDecimal("15.00")));
 
         StockMovement mistyped = stockMovementService.record(
                 tinnedTomato, new BigDecimal("1000.00"), StockMovementType.OPENING, owner, null, null);
@@ -71,9 +72,9 @@ class StockLedgerIntegrationTest {
 
     @Test
     void reversingTheSameMovementTwiceIsRejected() {
-        User owner = userRepository.save(new User("Aunt Amerley", UserRole.OWNER));
+        User owner = userRepository.save(new User(TestShops.ONE, "Aunt Amerley", UserRole.OWNER));
         Product oil = productRepository.save(
-                new Product("Cooking oil", ProductUnit.UNIT, new BigDecimal("25.00"), new BigDecimal("5.00")));
+                new Product(TestShops.ONE, "Cooking oil", ProductUnit.UNIT, new BigDecimal("25.00"), new BigDecimal("5.00")));
 
         StockMovement received = stockMovementService.record(
                 oil, new BigDecimal("50.00"), StockMovementType.RECEIVED, owner, null, null);

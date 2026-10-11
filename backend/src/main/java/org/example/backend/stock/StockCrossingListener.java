@@ -37,8 +37,8 @@ public class StockCrossingListener {
     @EventListener
     public void onStockMovementRecorded(StockMovementRecorded event) {
         Product product = event.product();
-        StockAlert alert = stockAlertRepository.findById(product.getId())
-                .orElseGet(() -> new StockAlert(product.getId()));
+        StockAlert alert = stockAlertRepository.findByProductIdAndShop(product.getId(), product.getShop())
+                .orElseGet(() -> new StockAlert(product));
 
         if (event.type() == StockMovementType.RECEIVED) {
             // Resets on receipt regardless of whether the new balance actually
@@ -60,7 +60,7 @@ public class StockCrossingListener {
         if (status != StockLevelStatus.OK) {
             alert.trigger();
             stockAlertRepository.save(alert);
-            notifier.send(product.getName() + " is at " + balance + " " + product.getUnit()
+            notifier.send(product.getShop(), product.getName() + " is at " + balance + " " + product.getUnit()
                     + " (alert level " + product.getAlertLevel() + ")");
         }
     }

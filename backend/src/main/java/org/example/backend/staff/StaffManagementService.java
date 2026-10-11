@@ -1,5 +1,6 @@
 package org.example.backend.staff;
 
+import org.example.backend.shop.CurrentShop;
 import org.example.backend.user.User;
 import org.example.backend.user.UserRepository;
 import org.example.backend.user.UserRole;
@@ -24,16 +25,19 @@ public class StaffManagementService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final CurrentShop currentShop;
 
-    public StaffManagementService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public StaffManagementService(UserRepository userRepository, PasswordEncoder passwordEncoder,
+                                   CurrentShop currentShop) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.currentShop = currentShop;
     }
 
     @Transactional
     public User createStaff(String name, String pin) {
         validatePin(pin);
-        User staff = new User(name, UserRole.STAFF);
+        User staff = new User(currentShop.get(), name, UserRole.STAFF);
         staff.setPinHash(passwordEncoder.encode(pin));
         return userRepository.save(staff);
     }
@@ -53,11 +57,11 @@ public class StaffManagementService {
     }
 
     public List<User> listStaff() {
-        return userRepository.findByRoleOrderByName(UserRole.STAFF);
+        return userRepository.findByShopAndRoleOrderByName(currentShop.get(), UserRole.STAFF);
     }
 
     private User getStaff(Long staffId) {
-        User user = userRepository.findById(staffId)
+        User user = userRepository.findByIdAndShop(staffId, currentShop.get())
                 .orElseThrow(() -> new IllegalArgumentException("No staff " + staffId));
         if (user.getRole() != UserRole.STAFF) {
             throw new IllegalArgumentException("User " + staffId + " is not staff");
