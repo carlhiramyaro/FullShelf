@@ -1,13 +1,28 @@
+import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { API_BASE_URL } from "@/lib/api";
+import SignOut from "../_components/SignOut";
 
-export default function OwnerLayout({
+// A signed-in user the backend does not know as an owner (no shop, or a replaced
+// login) is sent to /no-shop instead of hitting a 403 on every page.
+export default async function OwnerLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const { getToken } = await auth();
+  const res = await fetch(`${API_BASE_URL}/api/owner/me`, {
+    headers: { Authorization: `Bearer ${await getToken()}` },
+    cache: "no-store",
+  });
+  if (res.status === 401 || res.status === 403) {
+    redirect("/no-shop");
+  }
+
   return (
     <div className="min-h-screen bg-bg p-8">
-      <nav className="mb-8 flex gap-6 text-sm font-medium text-secondary">
+      <nav className="mb-8 flex flex-wrap gap-6 text-sm font-medium text-secondary">
         <Link href="/owner" className="hover:text-primary">
           Dashboard
         </Link>
@@ -44,6 +59,9 @@ export default function OwnerLayout({
         <Link href="/owner/settings" className="hover:text-primary">
           Settings
         </Link>
+        <span className="ml-auto">
+          <SignOut />
+        </span>
       </nav>
       {children}
     </div>

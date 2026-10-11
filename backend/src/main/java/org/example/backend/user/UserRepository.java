@@ -3,6 +3,7 @@ package org.example.backend.user;
 import org.example.backend.shop.Shop;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 import java.util.Optional;
@@ -28,4 +29,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findByShopAndRoleAndClerkUserIdIsNull(Shop shop, UserRole role);
 
     boolean existsByEmailIgnoreCaseAndRoleAndClerkUserIdIsNullAndShopNot(String email, UserRole role, Shop shop);
+
+    // Platform-admin reads, deliberately across all shops (the shop list).
+    @Query("select u from User u join fetch u.shop where u.role = org.example.backend.user.UserRole.OWNER order by u.id")
+    List<User> findAllOwnersWithShop();
+
+    @Query("select u.shop.id, count(u) from User u where u.role = org.example.backend.user.UserRole.STAFF "
+            + "and u.active = true group by u.shop.id")
+    List<Object[]> countActiveStaffByShop();
 }

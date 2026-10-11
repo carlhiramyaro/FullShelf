@@ -30,7 +30,7 @@ import java.util.regex.Pattern;
 @RequestMapping("/api/owner")
 public class OwnerController {
 
-    private static final Pattern E164 = Pattern.compile("^\\+[1-9]\\d{7,14}$");
+    public static final Pattern E164 = Pattern.compile("^\\+[1-9]\\d{7,14}$");
 
     private final UserRepository userRepository;
 
