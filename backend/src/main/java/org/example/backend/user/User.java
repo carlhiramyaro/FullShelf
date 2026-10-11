@@ -37,6 +37,9 @@ public class User {
     @Column(name = "clerk_user_id", unique = true)
     private String clerkUserId;
 
+    @Column(length = 254)
+    private String email;
+
     @Column(name = "phone_number", length = 20)
     private String phoneNumber;
 
@@ -103,6 +106,14 @@ public class User {
 
     public void setClerkUserId(String clerkUserId) {
         this.clerkUserId = clerkUserId;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public String getPhoneNumber() {

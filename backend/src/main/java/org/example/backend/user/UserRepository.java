@@ -20,9 +20,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     List<User> findByShopAndRoleAndActiveTrueOrderByName(Shop shop, UserRole role);
 
-    // Still unscoped on purpose: OwnerBootstrapRunner (deleted in G7) and its
-    // test call these.
-    List<User> findByRoleOrderByName(UserRole role);
+    // The pending owner a first Clerk login links to: an owner row with this
+    // email that no Clerk user has claimed yet. Unique per email (partial index).
+    @EntityGraph(attributePaths = "shop")
+    Optional<User> findFirstByEmailIgnoreCaseAndRoleAndClerkUserIdIsNull(String email, UserRole role);
 
-    List<User> findByRoleAndActiveTrueOrderByIdAsc(UserRole role);
+    List<User> findByShopAndRoleAndClerkUserIdIsNull(Shop shop, UserRole role);
+
+    boolean existsByEmailIgnoreCaseAndRoleAndClerkUserIdIsNullAndShopNot(String email, UserRole role, Shop shop);
 }
