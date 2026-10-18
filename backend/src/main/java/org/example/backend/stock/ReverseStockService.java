@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -46,10 +47,14 @@ public class ReverseStockService {
     }
 
     public List<ProductReverseStatus> listStatus() {
+        Map<Long, BigDecimal> balances = stockBalanceService.currentBalances(currentShop.get());
+        Map<Long, Long> reversibleCounts =
+                stockBalanceService.unreversedCounts(currentShop.get(), REVERSIBLE_TYPES);
         return productRepository.findByShopOrderByName(currentShop.get()).stream()
                 .filter(Product::isActive)
-                .map(product -> new ProductReverseStatus(product, reversibleMovements(product.getId()).size(),
-                        stockBalanceService.currentBalance(product.getId())))
+                .map(product -> new ProductReverseStatus(product,
+                        reversibleCounts.getOrDefault(product.getId(), 0L).intValue(),
+                        balances.getOrDefault(product.getId(), BigDecimal.ZERO)))
                 .toList();
     }
 

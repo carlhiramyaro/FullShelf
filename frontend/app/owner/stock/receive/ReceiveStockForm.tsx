@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useMemo, useState } from "react";
+import { matchesQuery } from "@/lib/search";
 import { receiveStockAction, ReceiveStockState } from "./actions";
 
 type Product = {
@@ -16,11 +17,15 @@ const initialState: ReceiveStockState = {};
 export default function ReceiveStockForm({ products }: { products: Product[] }) {
   const [state, formAction, pending] = useActionState(receiveStockAction, initialState);
   const [productId, setProductId] = useState<number | "">("");
+  const [search, setSearch] = useState("");
   const [cartonCount, setCartonCount] = useState("");
   const [actualQuantity, setActualQuantity] = useState("");
 
   const selectedProduct = products.find((p) => p.productId === productId) ?? null;
   const unitLabel = selectedProduct?.unit === "UNIT" ? "units" : "kg";
+  // Filter the options themselves (iOS Safari ignores `hidden` on <option>),
+  // but never drop the selected product or the select would lose its value.
+  const options = products.filter((p) => p.productId === productId || matchesQuery(p.name, search));
 
   const preview = useMemo(() => {
     if (!selectedProduct || selectedProduct.cartonWeight == null) return null;
@@ -35,6 +40,17 @@ export default function ReceiveStockForm({ products }: { products: Product[] }) 
   return (
     <form action={formAction} className="flex flex-col gap-3 rounded-lg border border-ink/10 p-4">
       <label className="flex flex-col text-sm text-ink/70">
+        Search products
+        <input
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search products…"
+          className="rounded border border-ink/20 bg-bg px-2 py-1"
+        />
+      </label>
+
+      <label className="flex flex-col text-sm text-ink/70">
         Product
         <select
           name="productId"
@@ -44,7 +60,7 @@ export default function ReceiveStockForm({ products }: { products: Product[] }) 
           className="rounded border border-ink/20 bg-bg px-2 py-1"
         >
           <option value="">Select a product</option>
-          {products.map((product) => (
+          {options.map((product) => (
             <option key={product.productId} value={product.productId}>
               {product.name} — currently {product.currentBalance} {product.unit === "UNIT" ? "units" : "kg"}
             </option>

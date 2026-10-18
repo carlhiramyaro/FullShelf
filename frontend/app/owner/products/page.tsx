@@ -1,5 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { API_BASE_URL } from "@/lib/api";
+import { ProductSearch, SearchMatch } from "../_components/ProductSearch";
 import { deactivateProductAction } from "./actions";
 import ProductForm, { Product } from "./ProductForm";
 
@@ -27,9 +28,15 @@ export default async function ProductsPage() {
         <ProductForm />
       </div>
 
+      <ProductSearch>
       <ul className="flex flex-col gap-3">
         {products.map((product) => (
-          <li key={product.id} className="rounded-lg border border-ink/10 p-4">
+          <SearchMatch
+            key={product.id}
+            name={product.name}
+            as="li"
+            className="rounded-lg border border-ink/10 p-4"
+          >
             <ProductForm product={product} />
             {product.active && (
               <form action={deactivateProductAction} className="mt-3">
@@ -42,10 +49,11 @@ export default async function ProductsPage() {
                 </button>
               </form>
             )}
-          </li>
+          </SearchMatch>
         ))}
         {products.length === 0 && <p className="text-sm text-ink/50">No products yet.</p>}
       </ul>
+      </ProductSearch>
     </div>
   );
 }

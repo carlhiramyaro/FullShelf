@@ -1,5 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { API_BASE_URL } from "@/lib/api";
+import { ProductSearch, SearchMatch } from "../_components/ProductSearch";
 import { setOpeningStockAction } from "./actions";
 
 type ProductOpeningStatus = {
@@ -36,16 +37,15 @@ export default async function OpeningStockPage() {
         whichever products you&apos;ve counted so far — the rest can wait until next time.
       </p>
 
+      <ProductSearch>
       {unset.length > 0 && (
         <form
           action={setOpeningStockAction}
           className="mb-8 flex flex-col gap-3 rounded-lg border border-ink/10 p-4"
         >
           {unset.map((product) => (
-            <label
-              key={product.productId}
-              className="flex items-center justify-between gap-3 text-sm text-ink/70"
-            >
+            <SearchMatch key={product.productId} name={product.name}>
+            <label className="flex items-center justify-between gap-3 text-sm text-ink/70">
               <span>
                 {product.name}{" "}
                 <span className="text-ink/40">({product.unit === "KG" ? "kg" : "units"})</span>
@@ -59,6 +59,7 @@ export default async function OpeningStockPage() {
                 className="w-32 rounded border border-ink/20 bg-bg px-2 py-1"
               />
             </label>
+            </SearchMatch>
           ))}
           <button
             type="submit"
@@ -74,16 +75,22 @@ export default async function OpeningStockPage() {
           <h2 className="mb-3 text-sm font-medium text-ink/70">Already set</h2>
           <ul className="flex flex-col gap-1 text-sm text-ink/60">
             {set.map((product) => (
-              <li key={product.productId} className="flex justify-between">
+              <SearchMatch
+                key={product.productId}
+                name={product.name}
+                as="li"
+                className="flex justify-between"
+              >
                 <span>{product.name}</span>
                 <span>
                   {product.currentBalance} {product.unit === "KG" ? "kg" : "units"}
                 </span>
-              </li>
+              </SearchMatch>
             ))}
           </ul>
         </div>
       )}
+      </ProductSearch>
 
       {products.length === 0 && <p className="text-sm text-ink/50">No active products yet.</p>}
     </div>

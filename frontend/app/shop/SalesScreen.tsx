@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { API_BASE_URL } from "@/lib/api";
+import { matchesQuery } from "@/lib/search";
 import ReceiptView, { ReceiptData } from "./ReceiptView";
 import TodaysSalesScreen from "./TodaysSalesScreen";
 
@@ -21,14 +22,6 @@ type CartLine = {
 async function errorMessage(res: Response, fallback: string): Promise<string> {
   const body = await res.json().catch(() => null);
   return (body as { message?: string } | null)?.message ?? fallback;
-}
-
-// Every word typed must appear somewhere in the name, so "kivo" finds all
-// Kivo products and "kivo tom" narrows to Kivo Tomato Paste.
-function matchesQuery(name: string, query: string): boolean {
-  const words = query.toLowerCase().split(/\s+/).filter(Boolean);
-  const lower = name.toLowerCase();
-  return words.every((word) => lower.includes(word));
 }
 
 function sessionHeaders(): HeadersInit {
