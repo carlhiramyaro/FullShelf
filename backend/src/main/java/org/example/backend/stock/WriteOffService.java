@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Owner-only entry of stock lost outside a sale (spoilage, damage). Like
@@ -35,9 +36,11 @@ public class WriteOffService {
     }
 
     public List<ProductWriteOffStatus> listStatus() {
+        Map<Long, BigDecimal> balances = stockBalanceService.currentBalances(currentShop.get());
         return productRepository.findByShopOrderByName(currentShop.get()).stream()
                 .filter(Product::isActive)
-                .map(product -> new ProductWriteOffStatus(product, stockBalanceService.currentBalance(product.getId())))
+                .map(product -> new ProductWriteOffStatus(product,
+                        balances.getOrDefault(product.getId(), BigDecimal.ZERO)))
                 .toList();
     }
 

@@ -1,5 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { API_BASE_URL } from "@/lib/api";
+import { ProductSearch, SearchMatch } from "../../_components/ProductSearch";
 
 type StockLevel = {
   productId: number;
@@ -41,7 +42,11 @@ function StatusBadge({ status }: { status: StockLevel["status"] }) {
 
 function StockRow({ level }: { level: StockLevel }) {
   return (
-    <li className="flex items-center justify-between rounded-lg border border-ink/10 p-3">
+    <SearchMatch
+      name={level.name}
+      as="li"
+      className="flex items-center justify-between rounded-lg border border-ink/10 p-3"
+    >
       <span>
         <span className="font-medium text-ink">{level.name}</span>{" "}
         <span className="text-xs text-ink/50">
@@ -54,7 +59,7 @@ function StockRow({ level }: { level: StockLevel }) {
         </span>
         <StatusBadge status={level.status} />
       </span>
-    </li>
+    </SearchMatch>
   );
 }
 
@@ -74,6 +79,7 @@ export default async function StockLevelsPage() {
         Current balance for every active product, derived from the ledger.
       </p>
 
+      <ProductSearch>
       {needsAttention.length > 0 && (
         <div className="mb-6">
           <h2 className="mb-3 text-sm font-medium text-ink/70">Needs attention</h2>
@@ -95,6 +101,7 @@ export default async function StockLevelsPage() {
           </ul>
         </div>
       )}
+      </ProductSearch>
 
       {levels.length === 0 && <p className="text-sm text-ink/50">No active products yet.</p>}
     </div>

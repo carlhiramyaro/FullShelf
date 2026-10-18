@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Read-only view of every active product's current balance against its
@@ -32,10 +33,11 @@ public class StockLevelService {
     }
 
     public List<ProductStockLevel> listLevels() {
+        Map<Long, BigDecimal> balances = stockBalanceService.currentBalances(currentShop.get());
         return productRepository.findByShopOrderByName(currentShop.get()).stream()
                 .filter(Product::isActive)
                 .map(product -> {
-                    BigDecimal balance = stockBalanceService.currentBalance(product.getId());
+                    BigDecimal balance = balances.getOrDefault(product.getId(), BigDecimal.ZERO);
                     return new ProductStockLevel(product, balance,
                             StockLevelStatus.forBalance(balance, product.getAlertLevel()));
                 })

@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Owner-only, per-delivery entry of actual received stock. Unlike opening
@@ -37,9 +38,11 @@ public class ReceiveStockService {
     }
 
     public List<ProductReceiveStatus> listStatus() {
+        Map<Long, BigDecimal> balances = stockBalanceService.currentBalances(currentShop.get());
         return productRepository.findByShopOrderByName(currentShop.get()).stream()
                 .filter(Product::isActive)
-                .map(product -> new ProductReceiveStatus(product, stockBalanceService.currentBalance(product.getId())))
+                .map(product -> new ProductReceiveStatus(product,
+                        balances.getOrDefault(product.getId(), BigDecimal.ZERO)))
                 .toList();
     }
 

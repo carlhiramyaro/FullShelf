@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
 import { API_BASE_URL } from "@/lib/api";
+import { ProductSearch, SearchMatch } from "../../_components/ProductSearch";
 
 type ProductReverseStatus = {
   productId: number;
@@ -37,12 +38,18 @@ export default async function ReverseEntryPage() {
         Receive stock screen.
       </p>
 
+      <ProductSearch>
       {reversible.length > 0 ? (
         <div className="mb-8 rounded-lg border border-ink/10 p-4">
           <h2 className="mb-3 text-sm font-medium text-ink/70">Has entries to reverse</h2>
           <ul className="flex flex-col gap-1 text-sm">
             {reversible.map((product) => (
-              <li key={product.productId} className="flex justify-between">
+              <SearchMatch
+                key={product.productId}
+                name={product.name}
+                as="li"
+                className="flex justify-between"
+              >
                 <Link
                   href={`/owner/stock/reverse/${product.productId}`}
                   className="text-primary hover:underline"
@@ -52,7 +59,7 @@ export default async function ReverseEntryPage() {
                 <span className="text-ink/50">
                   {product.reversibleCount} entr{product.reversibleCount === 1 ? "y" : "ies"}
                 </span>
-              </li>
+              </SearchMatch>
             ))}
           </ul>
         </div>
@@ -65,11 +72,14 @@ export default async function ReverseEntryPage() {
           <h2 className="mb-3 text-sm font-medium text-ink/70">Nothing to reverse</h2>
           <ul className="flex flex-col gap-1 text-sm text-ink/40">
             {clean.map((product) => (
-              <li key={product.productId}>{product.name}</li>
+              <SearchMatch key={product.productId} name={product.name} as="li">
+                {product.name}
+              </SearchMatch>
             ))}
           </ul>
         </div>
       )}
+      </ProductSearch>
     </div>
   );
 }

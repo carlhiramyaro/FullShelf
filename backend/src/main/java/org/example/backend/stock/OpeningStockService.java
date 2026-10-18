@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -26,28 +27,27 @@ import java.util.stream.Collectors;
 public class OpeningStockService {
 
     private final ProductRepository productRepository;
-    private final StockMovementRepository stockMovementRepository;
     private final StockMovementService stockMovementService;
     private final StockBalanceService stockBalanceService;
     private final CurrentShop currentShop;
 
     public OpeningStockService(ProductRepository productRepository,
-                                StockMovementRepository stockMovementRepository,
                                 StockMovementService stockMovementService,
                                 StockBalanceService stockBalanceService,
                                 CurrentShop currentShop) {
         this.productRepository = productRepository;
-        this.stockMovementRepository = stockMovementRepository;
         this.stockMovementService = stockMovementService;
         this.stockBalanceService = stockBalanceService;
         this.currentShop = currentShop;
     }
 
     public List<ProductOpeningStatus> listStatus() {
+        Map<Long, BigDecimal> balances = stockBalanceService.currentBalances(currentShop.get());
+        Map<Long, Long> openingCounts = unreversedOpeningCounts();
         return productRepository.findByShopOrderByName(currentShop.get()).stream()
                 .filter(Product::isActive)
-                .map(product -> new ProductOpeningStatus(product, hasUnreversedOpeningMovement(product.getId()),
-                        stockBalanceService.currentBalance(product.getId())))
+                .map(product -> new ProductOpeningStatus(product, openingCounts.containsKey(product.getId()),
+                        balances.getOrDefault(product.getId(), BigDecimal.ZERO)))
                 .toList();
     }
 
@@ -56,12 +56,15 @@ public class OpeningStockService {
         Map<Long, Product> products = quantitiesByProductId.keySet().stream()
                 .collect(Collectors.toMap(id -> id, this::getProduct));
 
+        // One grouped query for the whole batch, not one lookup per line.
+        Map<Long, Long> openingCounts = unreversedOpeningCounts();
+
         // Validate every line before writing any of them, so a bad line in
         // the batch never leaves some products opened and others not.
         quantitiesByProductId.forEach((productId, quantity) -> {
             Product product = products.get(productId);
             validateQuantity(product, quantity);
-            if (hasUnreversedOpeningMovement(productId)) {
+            if (openingCounts.containsKey(productId)) {
                 throw new IllegalArgumentException("Opening stock has already been set for \"" + product.getName()
                         + "\" — use Reverse entry to correct it");
             }
@@ -72,9 +75,9 @@ public class OpeningStockService {
                         null, null));
     }
 
-    private boolean hasUnreversedOpeningMovement(Long productId) {
-        return stockMovementRepository.findByProductIdAndType(productId, StockMovementType.OPENING).stream()
-                .anyMatch(movement -> !stockMovementRepository.existsByReversedMovementId(movement.getId()));
+    /** Products in the caller's shop that still have an OPENING row with no reversal pointing at it. */
+    private Map<Long, Long> unreversedOpeningCounts() {
+        return stockBalanceService.unreversedCounts(currentShop.get(), EnumSet.of(StockMovementType.OPENING));
     }
 
     private Product getProduct(Long id) {

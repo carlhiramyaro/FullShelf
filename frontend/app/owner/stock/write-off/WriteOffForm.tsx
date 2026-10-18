@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { matchesQuery } from "@/lib/search";
 import { writeOffAction, WriteOffState } from "./actions";
 
 type Product = {
@@ -15,12 +16,27 @@ const initialState: WriteOffState = {};
 export default function WriteOffForm({ products }: { products: Product[] }) {
   const [state, formAction, pending] = useActionState(writeOffAction, initialState);
   const [productId, setProductId] = useState<number | "">("");
+  const [search, setSearch] = useState("");
 
   const selectedProduct = products.find((p) => p.productId === productId) ?? null;
   const unitLabel = selectedProduct?.unit === "UNIT" ? "units" : "kg";
+  // Filter the options themselves (iOS Safari ignores `hidden` on <option>),
+  // but never drop the selected product or the select would lose its value.
+  const options = products.filter((p) => p.productId === productId || matchesQuery(p.name, search));
 
   return (
     <form action={formAction} className="flex flex-col gap-3 rounded-lg border border-ink/10 p-4">
+      <label className="flex flex-col text-sm text-ink/70">
+        Search products
+        <input
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search products…"
+          className="rounded border border-ink/20 bg-bg px-2 py-1"
+        />
+      </label>
+
       <label className="flex flex-col text-sm text-ink/70">
         Product
         <select
@@ -31,7 +47,7 @@ export default function WriteOffForm({ products }: { products: Product[] }) {
           className="rounded border border-ink/20 bg-bg px-2 py-1"
         >
           <option value="">Select a product</option>
-          {products.map((product) => (
+          {options.map((product) => (
             <option key={product.productId} value={product.productId}>
               {product.name} — currently {product.currentBalance} {product.unit === "UNIT" ? "units" : "kg"}
             </option>
