@@ -1,6 +1,6 @@
 # Landing page images: how they are made
 
-The six pictures on the public landing page (`app/_components/Landing.tsx`) are
+The five pictures on the public landing page (`app/_components/Landing.tsx`) are
 real screenshots of this app, taken from the **local** database after a seeded
 trading day. Two scripts do it. Why it is built this way: `docs/decisions.md`,
 "Landing page images: seeded day + Playwright".
@@ -30,11 +30,10 @@ npm run screenshots                     # writes public/landing/<slot>.png
   `CLERK_SECRET_KEY` is a development key (`sk_test_`). Production holds a real
   ledger. Never point them at it.
 
-## The six slots
+## The five slots
 
 | Slot        | View            | Shows                                              | Landing ratio |
 | ----------- | --------------- | -------------------------------------------------- | ------------- |
-| `hero`      | phone 390x844   | staff sales screen, the order open                 | 390:844       |
 | `counter`   | laptop 1440x900 | staff sales screen, order beside the tiles         | 16:10         |
 | `day-close` | laptop, cropped | owner's day close for today                        | 16:10         |
 | `stock`     | laptop, cropped | owner's stock levels, needs-attention first        | 16:10         |
@@ -44,7 +43,7 @@ npm run screenshots                     # writes public/landing/<slot>.png
 All at deviceScaleFactor 2. The owner pages are one narrow centred column, so
 those four are cropped to the middle 960x600 (`OWNER_CROP` in
 `screenshots.ts`), which keeps 16:10. The ratios are fixed in `Landing.tsx`
-(`PHONE_RATIO`, `LAPTOP_RATIO`); change a shot's shape in both places or the
+(`LAPTOP_RATIO`); change a shot's shape in both places or the
 layout will crop it.
 
 ## What the seed creates (all through the real endpoints)

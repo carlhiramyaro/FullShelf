@@ -1,4 +1,4 @@
-// Takes the six landing-page screenshots from the LOCAL app, after
+// Takes the five landing-page screenshots from the LOCAL app, after
 // seed-day.ts has put a day of sales in it. Needs both servers running
 // (frontend on :3001, backend on :8080).
 //
@@ -6,7 +6,6 @@
 //   npx tsx scripts/screenshots.ts
 //
 // Output goes to public/landing/<slot>.png, replacing the grey placeholders:
-//   hero       phone,   390x844   staff sales screen, the order open
 //   counter    laptop, 1440x900   staff sales screen, order beside the tiles
 //   day-close  laptop, 1440x900   owner's day close for today
 //   stock      laptop, 1440x900   owner's stock levels, needs-attention first
@@ -25,7 +24,6 @@ import { DEVICE_TOKEN_KEY } from "../lib/deviceToken";
 import { APP, STAFF, api, guardLocal, owner, ownerSignInTicket, pairDevice, staffLogin, todayUtc } from "./lib";
 
 const OUT = resolve(__dirname, "../public/landing");
-const PHONE = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true };
 const DESKTOP = { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2 };
 
 type Saleable = { productId: number; name: string; unit: "KG" | "UNIT"; price: number };
@@ -114,11 +112,6 @@ async function main() {
     const counterCtx = await browser.newContext(DESKTOP);
     await shot(await staffSalesScreen(counterCtx, device.deviceToken, order), "counter");
 
-    const heroCtx = await browser.newContext(PHONE);
-    const hero = await staffSalesScreen(heroCtx, device.deviceToken, order);
-    await hero.getByRole("button", { name: /View order/ }).click();
-    await shot(hero, "hero");
-
     console.log("Owner screens (laptop):");
     const ownerCtx = await browser.newContext(DESKTOP);
     const page = await signInOwner(ownerCtx);
@@ -135,7 +128,7 @@ async function main() {
     await browser?.close();
     await device.revoke();
   }
-  console.log("Done. Check the six images in public/landing/ before committing them: they show real names and totals from your local data.");
+  console.log("Done. Check the five images in public/landing/ before committing them: they show real names and totals from your local data.");
 }
 
 main().catch((e) => {
