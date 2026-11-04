@@ -36,7 +36,7 @@ export default async function NoShopPage() {
         try another.
       </p>
       <div>
-        <SignOut />
+        <SignOut redirectUrl="/sign-in" />
       </div>
     </main>
   );
