@@ -71,7 +71,6 @@ export default function SalesScreen({
       ];
     });
     setQuery("");
-    searchRef.current?.focus();
   }
 
   function updateQuantity(productId: number, quantity: number) {
@@ -182,7 +181,7 @@ export default function SalesScreen({
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search products…"
               aria-label="Search products"
-              className="w-full rounded-lg border border-ink/20 bg-bg px-3 py-2 pr-10 text-ink"
+              className="w-full rounded-lg border border-ink/20 bg-bg px-3 py-2 pr-10 text-ink [&::-webkit-search-cancel-button]:appearance-none"
             />
             {query && (
               <button
