@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { API_BASE_URL } from "@/lib/api";
 import { matchesQuery } from "@/lib/search";
 import ReceiptView, { ReceiptData } from "./ReceiptView";
@@ -8,7 +8,7 @@ import TodaysSalesScreen from "./TodaysSalesScreen";
 
 const STAFF_SESSION_KEY = "fullshelf_staff_session";
 
-type SaleableProduct = { productId: number; name: string; unit: "KG" | "UNIT"; price: number };
+type SaleableProduct = { productId: number; name: string; unit: "KG" | "UNIT"; price: number; stock: number };
 
 type CartLine = {
   productId: number;
@@ -50,15 +50,26 @@ export default function SalesScreen({
   const [orderOpen, setOrderOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    fetch(`${API_BASE_URL}/api/staff/sales`, { headers: sessionHeaders() }).then(async (res) => {
+  // Returns null when the list can't be refreshed, so a failed refresh after a
+  // sale keeps the last figures on screen instead of blanking the tiles.
+  const fetchProducts = useCallback(async (): Promise<SaleableProduct[] | null> => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/staff/sales`, { headers: sessionHeaders() });
       if (res.status === 401) {
         onSwitchUser();
-        return;
+        return null;
       }
-      if (res.ok) setProducts(await res.json());
-    });
+      return res.ok ? await res.json() : null;
+    } catch {
+      return null;
+    }
   }, [onSwitchUser]);
+
+  useEffect(() => {
+    fetchProducts().then((list) => {
+      if (list) setProducts(list);
+    });
+  }, [fetchProducts]);
 
   function addToCart(product: SaleableProduct) {
     setError(null);
@@ -120,6 +131,9 @@ export default function SalesScreen({
       setReceipt((await res.json()) as ReceiptData);
       setCart([]);
       setOrderOpen(false);
+      fetchProducts().then((list) => {
+        if (list) setProducts(list);
+      });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not save the sale");
     } finally {
@@ -199,7 +213,10 @@ export default function SalesScreen({
 
           <div className="grid min-h-0 flex-1 auto-rows-min grid-cols-2 gap-3 overflow-y-auto sm:grid-cols-3">
             {visible.map((product) => {
-              const inOrder = cart.some((line) => line.productId === product.productId);
+              const orderLine = cart.find((line) => line.productId === product.productId);
+              const inOrder = orderLine !== undefined;
+              // Ledger balance minus what is already in this order, so the tile counts down as items are added.
+              const left = Math.round((product.stock - (orderLine?.quantity ?? 0)) * 100) / 100;
               return (
                 <button
                   key={product.productId}
@@ -211,6 +228,9 @@ export default function SalesScreen({
                   <p className="font-medium text-ink">{product.name}</p>
                   <p className="text-xs text-ink/50">
                     GH₵{product.price.toFixed(2)} / {product.unit === "UNIT" ? "unit" : "kg"}
+                  </p>
+                  <p className="mt-1 text-xs font-medium text-primary">
+                    {left <= 0 ? `Out of stock (${left})` : `${left} ${product.unit === "UNIT" ? "left" : "kg left"}`}
                   </p>
                   {inOrder && <p className="mt-1 text-xs font-medium text-primary">✓ In order</p>}
                 </button>
