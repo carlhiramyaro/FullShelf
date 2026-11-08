@@ -12,6 +12,8 @@ import org.example.backend.product.ProductRepository;
 import org.example.backend.product.ProductUnit;
 import org.example.backend.security.TokenHasher;
 import org.example.backend.staff.StaffSession;
+import org.example.backend.stock.StockMovementService;
+import org.example.backend.stock.StockMovementType;
 import org.example.backend.staff.StaffSessionRepository;
 import org.example.backend.user.User;
 import org.example.backend.user.UserRepository;
@@ -91,6 +93,9 @@ class SaleQueryHttpIntegrationTest {
     private SaleService saleService;
 
     @Autowired
+    private StockMovementService stockMovementService;
+
+    @Autowired
     private JdbcTemplate jdbcTemplate;
 
     @Autowired
@@ -138,5 +143,25 @@ class SaleQueryHttpIntegrationTest {
         mockMvc.perform(get("/api/staff/sales/" + result.receiptNumber())
                         .header("X-Staff-Session-Token", sessionToken))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void saleableProductsCarryTheLedgerBalance() throws Exception {
+        String sessionToken = staffSessionToken();
+        User seller = userRepository.save(new User(TestShops.ONE, "Sale Stock Http Test Seller", UserRole.STAFF));
+        Product stocked = productRepository.save(new Product(TestShops.ONE,
+                "Sale Stock Http Test Stocked", ProductUnit.UNIT, new BigDecimal("25.00"), new BigDecimal("5.00")));
+        Product untouched = productRepository.save(new Product(TestShops.ONE,
+                "Sale Stock Http Test Untouched", ProductUnit.UNIT, new BigDecimal("25.00"), new BigDecimal("5.00")));
+        stockMovementService.record(stocked, new BigDecimal("10"), StockMovementType.OPENING, seller, null, null);
+        saleService.confirmSale(List.of(new SaleService.LineRequest(stocked.getId(), new BigDecimal("3"), null)),
+                seller.getId());
+        entityManager.flush();
+        entityManager.clear();
+
+        mockMvc.perform(get("/api/staff/sales").header("X-Staff-Session-Token", sessionToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.productId == " + stocked.getId() + ")].stock").value(7.0))
+                .andExpect(jsonPath("$[?(@.productId == " + untouched.getId() + ")].stock").value(0));
     }
 }

@@ -211,7 +211,7 @@ function PairingForm({
           Pair this device
         </h1>
         <p className="text-sm text-ink/70">
-          Enter the code Aunt Amerley generated on her phone.
+          Enter the code the shop owner generated.
         </p>
         <input
           className="rounded border border-ink/20 bg-bg px-3 py-2 text-center text-lg tracking-widest uppercase"

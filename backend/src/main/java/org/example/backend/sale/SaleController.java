@@ -1,7 +1,9 @@
 package org.example.backend.sale;
 
 import org.example.backend.product.Product;
+import org.example.backend.shop.CurrentShop;
 import org.example.backend.staff.StaffPrincipal;
+import org.example.backend.stock.StockBalanceService;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Staff-facing sales screen. Sits under /api/staff/** and isn't in
@@ -30,14 +33,24 @@ public class SaleController {
     private final SaleService saleService;
     private final SaleQueryService saleQueryService;
 
-    public SaleController(SaleService saleService, SaleQueryService saleQueryService) {
+    private final StockBalanceService stockBalanceService;
+    private final CurrentShop currentShop;
+
+    public SaleController(SaleService saleService, SaleQueryService saleQueryService,
+                           StockBalanceService stockBalanceService, CurrentShop currentShop) {
         this.saleService = saleService;
         this.saleQueryService = saleQueryService;
+        this.stockBalanceService = stockBalanceService;
+        this.currentShop = currentShop;
     }
 
     @GetMapping
     public List<SaleableProductResponse> products() {
-        return saleService.listSaleableProducts().stream().map(SaleableProductResponse::from).toList();
+        // One grouped query for the whole shop, not one balance per tile.
+        Map<Long, BigDecimal> balances = stockBalanceService.currentBalances(currentShop.get());
+        return saleService.listSaleableProducts().stream()
+                .map(p -> SaleableProductResponse.from(p, balances.getOrDefault(p.getId(), BigDecimal.ZERO)))
+                .toList();
     }
 
     @PostMapping
@@ -74,10 +87,11 @@ public class SaleController {
         return new ErrorResponse(ex.getMessage());
     }
 
-    public record SaleableProductResponse(Long productId, String name, String unit, BigDecimal price) {
-        static SaleableProductResponse from(Product product) {
+    public record SaleableProductResponse(Long productId, String name, String unit, BigDecimal price,
+                                          BigDecimal stock) {
+        static SaleableProductResponse from(Product product, BigDecimal stock) {
             return new SaleableProductResponse(product.getId(), product.getName(), product.getUnit().name(),
-                    product.getPrice());
+                    product.getPrice(), stock);
         }
     }
 

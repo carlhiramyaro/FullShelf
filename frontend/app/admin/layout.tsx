@@ -15,7 +15,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <div className="min-h-screen bg-bg p-8">
       <div className="mb-8 flex justify-end">
-        <SignOut />
+        <SignOut redirectUrl="/sign-in" />
       </div>
       {res.ok ? (
         children
