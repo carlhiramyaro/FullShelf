@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
-import { matchesQuery } from "@/lib/search";
+import Link from "next/link";
+import { useActionState, useMemo, useRef, useState } from "react";
+import ProductCombobox from "./ProductCombobox";
 import { receiveStockAction, ReceiveStockState } from "./actions";
 
 type Product = {
@@ -12,20 +13,65 @@ type Product = {
   currentBalance: number;
 };
 
+type Recorded = {
+  id: number;
+  name: string;
+  unit: "KG" | "UNIT";
+  actualQuantity: number;
+  gap: number | null;
+  nominal: number | null;
+};
+
 const initialState: ReceiveStockState = {};
 
 export default function ReceiveStockForm({ products }: { products: Product[] }) {
-  const [state, formAction, pending] = useActionState(receiveStockAction, initialState);
   const [productId, setProductId] = useState<number | "">("");
-  const [search, setSearch] = useState("");
+  const [query, setQuery] = useState("");
   const [cartonCount, setCartonCount] = useState("");
   const [actualQuantity, setActualQuantity] = useState("");
+  // This sitting's saves only. Lives in the browser; every save is in the ledger.
+  const [recorded, setRecorded] = useState<Recorded[]>([]);
+  const nextId = useRef(1);
+
+  const productRef = useRef<HTMLInputElement>(null);
+  const cartonRef = useRef<HTMLInputElement>(null);
+  const quantityRef = useRef<HTMLInputElement>(null);
 
   const selectedProduct = products.find((p) => p.productId === productId) ?? null;
   const unitLabel = selectedProduct?.unit === "UNIT" ? "units" : "kg";
-  // Filter the options themselves (iOS Safari ignores `hidden` on <option>),
-  // but never drop the selected product or the select would lose its value.
-  const options = products.filter((p) => p.productId === productId || matchesQuery(p.name, search));
+  // Without a carton weight there is no nominal to compare against, so the
+  // carton field would do nothing.
+  const showCartons = selectedProduct?.cartonWeight != null;
+
+  async function submit(prev: ReceiveStockState, formData: FormData): Promise<ReceiveStockState> {
+    const submitted = products.find((p) => p.productId === Number(formData.get("productId")));
+    const next = await receiveStockAction(prev, formData);
+    if (next.result && submitted) {
+      const result = next.result;
+      setRecorded((list) => [
+        {
+          id: nextId.current++,
+          name: submitted.name,
+          unit: submitted.unit,
+          actualQuantity: result.actualQuantity,
+          gap: result.gap,
+          nominal: result.nominal,
+        },
+        ...list,
+      ]);
+      // Ready for the next product. On errors nothing is cleared, so she can fix and resubmit.
+      setProductId("");
+      setQuery("");
+      setCartonCount("");
+      setActualQuantity("");
+      // Refocus only where there is a physical keyboard. On a phone or tablet it
+      // would raise the on-screen keyboard over the list she is reading.
+      if (window.matchMedia("(pointer: fine)").matches) productRef.current?.focus();
+    }
+    return next;
+  }
+
+  const [state, formAction, pending] = useActionState(submit, initialState);
 
   const preview = useMemo(() => {
     if (!selectedProduct || selectedProduct.cartonWeight == null) return null;
@@ -37,97 +83,117 @@ export default function ReceiveStockForm({ products }: { products: Product[] }) 
     return { nominal, gap };
   }, [selectedProduct, cartonCount, actualQuantity]);
 
+  function focusAfterPick() {
+    // The carton field only mounts once the product is set, so wait a frame.
+    requestAnimationFrame(() => (cartonRef.current ?? quantityRef.current)?.focus());
+  }
+
   return (
-    <form action={formAction} className="flex flex-col gap-3 rounded-lg border border-ink/10 p-4">
-      <label className="flex flex-col text-sm text-ink/70">
-        Search products
-        <input
-          type="search"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search products…"
-          className="rounded border border-ink/20 bg-bg px-2 py-1"
+    <>
+      <form action={formAction} className="flex flex-col gap-3 rounded-lg border border-ink/10 p-4">
+        <input type="hidden" name="productId" value={productId} />
+        <ProductCombobox
+          products={products}
+          query={query}
+          onQueryChange={setQuery}
+          selectedId={productId}
+          onSelect={(id) => {
+            setProductId(id);
+            setCartonCount("");
+          }}
+          onPicked={focusAfterPick}
+          inputRef={productRef}
         />
-      </label>
 
-      <label className="flex flex-col text-sm text-ink/70">
-        Product
-        <select
-          name="productId"
-          required
-          value={productId}
-          onChange={(e) => setProductId(e.target.value ? Number(e.target.value) : "")}
-          className="rounded border border-ink/20 bg-bg px-2 py-1"
+        {showCartons && (
+          <label className="flex flex-col text-sm text-ink/70">
+            Carton count (optional)
+            <input
+              ref={cartonRef}
+              name="cartonCount"
+              type="number"
+              inputMode="numeric"
+              step="1"
+              min="1"
+              value={cartonCount}
+              onChange={(e) => setCartonCount(e.target.value)}
+              className="w-32 rounded border border-ink/20 bg-bg px-2 py-1"
+            />
+          </label>
+        )}
+
+        <label className="flex flex-col text-sm text-ink/70">
+          Actual {unitLabel} received
+          <input
+            ref={quantityRef}
+            name="actualQuantity"
+            type="number"
+            inputMode="decimal"
+            step="0.01"
+            min="0.01"
+            required
+            value={actualQuantity}
+            onChange={(e) => setActualQuantity(e.target.value)}
+            className="w-32 rounded border border-ink/20 bg-bg px-2 py-1"
+          />
+        </label>
+
+        {preview && (
+          <p className="text-sm text-ink/60">
+            Nominal {preview.nominal.toFixed(2)} {unitLabel} — actual is{" "}
+            <span className={preview.gap < 0 ? "text-error" : preview.gap > 0 ? "text-primary" : ""}>
+              {preview.gap > 0 ? "+" : ""}
+              {preview.gap.toFixed(2)} {unitLabel}
+            </span>{" "}
+            {preview.gap < 0 ? "short" : preview.gap > 0 ? "over" : "exact"}
+          </p>
+        )}
+
+        <button
+          type="submit"
+          disabled={pending}
+          className="mt-1 self-start rounded bg-primary px-4 py-1.5 text-sm text-on-dark disabled:opacity-50"
         >
-          <option value="">Select a product</option>
-          {options.map((product) => (
-            <option key={product.productId} value={product.productId}>
-              {product.name} — currently {product.currentBalance} {product.unit === "UNIT" ? "units" : "kg"}
-            </option>
-          ))}
-        </select>
-      </label>
+          {pending ? "Saving…" : "Record delivery"}
+        </button>
 
-      <label className="flex flex-col text-sm text-ink/70">
-        Carton count (optional)
-        <input
-          name="cartonCount"
-          type="number"
-          step="1"
-          min="1"
-          value={cartonCount}
-          onChange={(e) => setCartonCount(e.target.value)}
-          className="w-32 rounded border border-ink/20 bg-bg px-2 py-1"
-        />
-      </label>
+        {state.error && <p className="text-sm text-error">⚠ {state.error}</p>}
+      </form>
 
-      <label className="flex flex-col text-sm text-ink/70">
-        Actual {unitLabel} received
-        <input
-          name="actualQuantity"
-          type="number"
-          step="0.01"
-          min="0.01"
-          required
-          value={actualQuantity}
-          onChange={(e) => setActualQuantity(e.target.value)}
-          className="w-32 rounded border border-ink/20 bg-bg px-2 py-1"
-        />
-      </label>
-
-      {preview && (
-        <p className="text-sm text-ink/60">
-          Nominal {preview.nominal.toFixed(2)} {unitLabel} — actual is{" "}
-          <span className={preview.gap < 0 ? "text-error" : preview.gap > 0 ? "text-primary" : ""}>
-            {preview.gap > 0 ? "+" : ""}
-            {preview.gap.toFixed(2)} {unitLabel}
-          </span>{" "}
-          {preview.gap < 0 ? "short" : preview.gap > 0 ? "over" : "exact"}
-        </p>
+      {recorded.length > 0 && (
+        <section className="mt-6" aria-label="Recorded this session">
+          <h2 className="mb-2 text-sm font-semibold text-ink">Recorded this session</h2>
+          <ul className="flex flex-col divide-y divide-ink/10 rounded-lg border border-ink/10">
+            {recorded.map((entry) => {
+              const unit = entry.unit === "UNIT" ? "units" : "kg";
+              return (
+                <li key={entry.id} className="px-3 py-2 text-sm text-ink">
+                  <span className="font-medium">{entry.name}</span> — {entry.actualQuantity} {unit}{" "}
+                  received
+                  {entry.gap != null && (
+                    <span
+                      className={`block text-xs ${entry.gap < 0 ? "text-alert-text" : "text-ink/60"}`}
+                    >
+                      {entry.gap < 0 ? "⚠ " : ""}
+                      {Math.abs(entry.gap).toFixed(2)} {unit}{" "}
+                      {entry.gap < 0 ? "short" : entry.gap > 0 ? "over" : "exact"} against nominal{" "}
+                      {entry.nominal}
+                    </span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+          <p className="mt-2 text-xs text-ink/60">
+            This list clears when you leave or refresh the page; every entry above is saved in the
+            ledger. To correct a mistake, use{" "}
+            <Link href="/owner/stock/reverse" className="underline">
+              Reverse entry
+            </Link>
+            .
+          </p>
+        </section>
       )}
-
-      <button
-        type="submit"
-        disabled={pending}
-        className="mt-1 self-start rounded bg-primary px-4 py-1.5 text-sm text-on-dark disabled:opacity-50"
-      >
-        {pending ? "Saving…" : "Record delivery"}
-      </button>
-
-      {state.error && <p className="text-sm text-error">{state.error}</p>}
-      {state.result && (
-        <p className="text-sm text-primary">
-          Saved: {state.result.actualQuantity} {unitLabel} received
-          {state.result.gap != null && (
-            <>
-              {" "}
-              ({state.result.gap > 0 ? "+" : ""}
-              {state.result.gap} {unitLabel} vs nominal {state.result.nominal})
-            </>
-          )}
-          .
-        </p>
-      )}
-    </form>
+    </>
   );
 }
