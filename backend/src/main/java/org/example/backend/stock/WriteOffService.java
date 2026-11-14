@@ -51,7 +51,8 @@ public class WriteOffService {
         validateNote(product, note);
 
         return stockMovementService.record(
-                product, quantity.negate(), StockMovementType.WRITE_OFF, owner, null, note.trim());
+                product, quantity.negate(), StockMovementType.WRITE_OFF, owner, null, note.trim(),
+                product.getCostPrice());
     }
 
     private Product getProduct(Long id) {

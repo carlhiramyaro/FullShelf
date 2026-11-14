@@ -37,9 +37,17 @@ public class StockMovementService {
     @Transactional
     public StockMovement record(Product product, BigDecimal signedQuantity, StockMovementType type,
                                  User performedBy, SaleLine saleLine, String note) {
+        return record(product, signedQuantity, type, performedBy, saleLine, note, null);
+    }
+
+    /** {@code unitCost} is for write-offs only: the product's cost when the stock was lost. */
+    @Transactional
+    public StockMovement record(Product product, BigDecimal signedQuantity, StockMovementType type,
+                                 User performedBy, SaleLine saleLine, String note, BigDecimal unitCost) {
         StockMovement movement = new StockMovement(product, signedQuantity, type, performedBy);
         movement.setSaleLine(saleLine);
         movement.setNote(note);
+        movement.setUnitCost(unitCost);
         StockMovement saved = stockMovementRepository.save(movement);
         eventPublisher.publishEvent(new StockMovementRecorded(product, type));
         return saved;

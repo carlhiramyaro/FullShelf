@@ -43,12 +43,21 @@ public class SaleLine {
     @Column(name = "line_total", nullable = false, precision = 10, scale = 2)
     private BigDecimal lineTotal;
 
+    // Snapshot of Product.costPrice at sale time, like unitPrice. Null when the product
+    // had no cost yet; the first-time fill may set it later and flags it estimated.
+    @Column(name = "unit_cost", precision = 12, scale = 2)
+    private BigDecimal unitCost;
+
+    @Column(name = "cost_estimated", nullable = false)
+    private boolean costEstimated = false;
+
     protected SaleLine() {
     }
 
     public SaleLine(Sale sale, Product product, BigDecimal quantity, BigDecimal unitPrice,
-                     BigDecimal discount, BigDecimal lineTotal) {
+                     BigDecimal discount, BigDecimal lineTotal, BigDecimal unitCost) {
         this.sale = sale;
+        this.unitCost = unitCost;
         this.product = product;
         this.quantity = quantity;
         this.unitPrice = unitPrice;
@@ -78,6 +87,14 @@ public class SaleLine {
 
     public BigDecimal getDiscount() {
         return discount;
+    }
+
+    public BigDecimal getUnitCost() {
+        return unitCost;
+    }
+
+    public boolean isCostEstimated() {
+        return costEstimated;
     }
 
     public BigDecimal getLineTotal() {

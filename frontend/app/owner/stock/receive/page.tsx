@@ -8,6 +8,7 @@ type ProductReceiveStatus = {
   unit: "KG" | "UNIT";
   cartonWeight: number | null;
   currentBalance: number;
+  costPrice: number | null;
 };
 
 async function fetchProducts(): Promise<ProductReceiveStatus[]> {

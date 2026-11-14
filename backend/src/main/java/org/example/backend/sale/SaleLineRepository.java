@@ -1,7 +1,9 @@
 package org.example.backend.sale;
 
 import org.example.backend.shop.Shop;
+import org.example.backend.product.Product;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -12,6 +14,16 @@ import java.util.List;
 public interface SaleLineRepository extends JpaRepository<SaleLine, Long> {
 
     List<SaleLine> findBySaleId(Long saleId);
+
+    /**
+     * The one-time fill (I2): when a product gets its first cost, its old lines with no
+     * cost take it, flagged estimated. Only touches nulls, so it can't rewrite a real snapshot.
+     * Flushes first so the product's own change is written in the same transaction.
+     */
+    @Modifying(flushAutomatically = true)
+    @Query("update SaleLine l set l.unitCost = :cost, l.costEstimated = true "
+            + "where l.product = :product and l.unitCost is null")
+    int fillMissingCost(@Param("product") Product product, @Param("cost") BigDecimal cost);
 
     // Sale has no persisted total (same "no cached derived column" call as
     // Product's balance) — the sales list needs it per row, so it's summed

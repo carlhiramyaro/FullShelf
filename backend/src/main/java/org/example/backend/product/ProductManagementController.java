@@ -37,14 +37,16 @@ public class ProductManagementController {
     @PostMapping
     public ProductResponse create(@RequestBody ProductRequest request) {
         Product product = productManagementService.createProduct(
-                request.name(), request.unit(), request.price(), request.alertLevel(), request.cartonWeight());
+                request.name(), request.unit(), request.price(), request.alertLevel(), request.cartonWeight(),
+                request.costPrice());
         return ProductResponse.from(product);
     }
 
     @PostMapping("/{id}")
     public ProductResponse update(@PathVariable Long id, @RequestBody ProductRequest request) {
         Product product = productManagementService.updateProduct(
-                id, request.name(), request.unit(), request.price(), request.alertLevel(), request.cartonWeight());
+                id, request.name(), request.unit(), request.price(), request.alertLevel(), request.cartonWeight(),
+                request.costPrice());
         return ProductResponse.from(product);
     }
 
@@ -62,14 +64,15 @@ public class ProductManagementController {
     }
 
     public record ProductRequest(String name, ProductUnit unit, BigDecimal price, BigDecimal alertLevel,
-                                  BigDecimal cartonWeight) {
+                                  BigDecimal cartonWeight, BigDecimal costPrice) {
     }
 
     public record ProductResponse(Long id, String name, ProductUnit unit, BigDecimal price, BigDecimal alertLevel,
-                                   BigDecimal cartonWeight, boolean active) {
+                                   BigDecimal cartonWeight, boolean active, BigDecimal costPrice) {
         static ProductResponse from(Product product) {
             return new ProductResponse(product.getId(), product.getName(), product.getUnit(), product.getPrice(),
-                    product.getAlertLevel(), product.getCartonWeight(), product.isActive());
+                    product.getAlertLevel(), product.getCartonWeight(), product.isActive(),
+                    product.getCostPrice());
         }
     }
 

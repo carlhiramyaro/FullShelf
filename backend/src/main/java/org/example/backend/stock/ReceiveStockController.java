@@ -46,7 +46,7 @@ public class ReceiveStockController {
         // SecurityConfig already guarantees this JWT resolved to an OWNER user.
         User owner = userRepository.findByClerkUserId(jwt.getSubject()).orElseThrow();
         ReceiveStockService.ReceiveResult result = receiveStockService.receive(
-                request.productId(), request.cartonCount(), request.actualQuantity(), owner);
+                request.productId(), request.cartonCount(), request.actualQuantity(), request.costPerUnit(), owner);
         return ReceiveResponse.from(result);
     }
 
@@ -58,15 +58,16 @@ public class ReceiveStockController {
                 : "That delivery could not be saved");
     }
 
-    public record ReceiveStockRequest(Long productId, Integer cartonCount, BigDecimal actualQuantity) {
+    public record ReceiveStockRequest(Long productId, Integer cartonCount, BigDecimal actualQuantity,
+                                       BigDecimal costPerUnit) {
     }
 
     public record ProductReceiveResponse(Long productId, String name, String unit, BigDecimal cartonWeight,
-                                          BigDecimal currentBalance) {
+                                          BigDecimal currentBalance, BigDecimal costPrice) {
         static ProductReceiveResponse from(ReceiveStockService.ProductReceiveStatus status) {
             Product product = status.product();
             return new ProductReceiveResponse(product.getId(), product.getName(), product.getUnit().name(),
-                    product.getCartonWeight(), status.currentBalance());
+                    product.getCartonWeight(), status.currentBalance(), product.getCostPrice());
         }
     }
 

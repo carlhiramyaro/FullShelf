@@ -41,6 +41,11 @@ public class Product {
     @Column(name = "carton_weight", precision = 10, scale = 2)
     private BigDecimal cartonWeight;
 
+    // Latest cost per kg/unit; null until the owner sets one. Only ProductCostService
+    // writes it, so the one-time fill of old sale lines can't be skipped.
+    @Column(name = "cost_price", precision = 12, scale = 2)
+    private BigDecimal costPrice;
+
     @Column(nullable = false)
     private boolean active = true;
 
@@ -64,6 +69,14 @@ public class Product {
 
     public Shop getShop() {
         return shop;
+    }
+
+    public BigDecimal getCostPrice() {
+        return costPrice;
+    }
+
+    void setCostPrice(BigDecimal costPrice) {
+        this.costPrice = costPrice;
     }
 
     public Long getId() {

@@ -11,6 +11,7 @@ export type Product = {
   alertLevel: number;
   cartonWeight: number | null;
   active: boolean;
+  costPrice: number | null;
 };
 
 const initialState: ProductFormState = {};
@@ -60,6 +61,19 @@ export default function ProductForm({ product }: { product?: Product }) {
           min="0.01"
           required
           defaultValue={v?.price ?? product?.price ?? ""}
+          className="w-28 rounded border border-ink/20 bg-bg px-2 py-1"
+        />
+      </label>
+      <label className="flex flex-col text-sm text-ink/70">
+        Cost (GH₵ per kg/unit)
+        <input
+          name="costPrice"
+          type="number"
+          step="0.01"
+          min="0"
+          // Once a cost is set it can be changed but not cleared, so the field can't be left blank.
+          required={product?.costPrice != null}
+          defaultValue={v?.costPrice ?? product?.costPrice ?? ""}
           className="w-28 rounded border border-ink/20 bg-bg px-2 py-1"
         />
       </label>

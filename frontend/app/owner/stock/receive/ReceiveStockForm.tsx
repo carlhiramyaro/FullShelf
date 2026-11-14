@@ -11,6 +11,7 @@ type Product = {
   unit: "KG" | "UNIT";
   cartonWeight: number | null;
   currentBalance: number;
+  costPrice: number | null;
 };
 
 type Recorded = {
@@ -29,6 +30,7 @@ export default function ReceiveStockForm({ products }: { products: Product[] }) 
   const [query, setQuery] = useState("");
   const [cartonCount, setCartonCount] = useState("");
   const [actualQuantity, setActualQuantity] = useState("");
+  const [costPerUnit, setCostPerUnit] = useState("");
   // This sitting's saves only. Lives in the browser; every save is in the ledger.
   const [recorded, setRecorded] = useState<Recorded[]>([]);
   const nextId = useRef(1);
@@ -64,6 +66,7 @@ export default function ReceiveStockForm({ products }: { products: Product[] }) 
       setQuery("");
       setCartonCount("");
       setActualQuantity("");
+      setCostPerUnit("");
       // Refocus only where there is a physical keyboard. On a phone or tablet it
       // would raise the on-screen keyboard over the list she is reading.
       if (window.matchMedia("(pointer: fine)").matches) productRef.current?.focus();
@@ -100,6 +103,7 @@ export default function ReceiveStockForm({ products }: { products: Product[] }) 
           onSelect={(id) => {
             setProductId(id);
             setCartonCount("");
+            setCostPerUnit("");
           }}
           onPicked={focusAfterPick}
           inputRef={productRef}
@@ -136,6 +140,27 @@ export default function ReceiveStockForm({ products }: { products: Product[] }) 
             onChange={(e) => setActualQuantity(e.target.value)}
             className="w-32 rounded border border-ink/20 bg-bg px-2 py-1"
           />
+        </label>
+
+        <label className="flex flex-col text-sm text-ink/70">
+          Cost this delivery, GH₵ per {selectedProduct?.unit === "UNIT" ? "unit" : "kg"} (optional)
+          <input
+            name="costPerUnit"
+            type="number"
+            inputMode="decimal"
+            step="0.01"
+            min="0"
+            value={costPerUnit}
+            onChange={(e) => setCostPerUnit(e.target.value)}
+            className="w-32 rounded border border-ink/20 bg-bg px-2 py-1"
+          />
+          {selectedProduct && (
+            <span className="mt-1 text-xs text-ink/60">
+              {selectedProduct.costPrice != null
+                ? `Current cost GH₵ ${selectedProduct.costPrice.toFixed(2)}. Entering a cost replaces it.`
+                : "No cost set yet. Entering one here sets it."}
+            </span>
+          )}
         </label>
 
         {preview && (

@@ -21,6 +21,8 @@ type DashboardSummary = {
   salesMomo: number;
   lowStock: StockLevel[];
   negativeStock: StockLevel[];
+  stockValue: number;
+  productsWithoutCost: number;
 };
 
 async function fetchDashboard(): Promise<DashboardSummary> {
@@ -61,6 +63,15 @@ export default async function DashboardPage() {
         <StatTile label="Discounts today" value={formatCash(summary.discountsToday)} />
         <StatTile label="Expected cash" value={formatCash(summary.expectedCash)} />
         <StatTile label="Expected MoMo" value={formatCash(summary.expectedMomo)} />
+        <StatTile
+          label="Stock value on hand"
+          value={formatCash(summary.stockValue)}
+          hint={
+            summary.productsWithoutCost > 0
+              ? `${summary.productsWithoutCost} ${summary.productsWithoutCost === 1 ? "product has" : "products have"} no cost set`
+              : undefined
+          }
+        />
       </div>
 
       {summary.negativeStock.length > 0 && (

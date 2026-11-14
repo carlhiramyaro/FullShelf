@@ -1,6 +1,8 @@
 import { auth } from "@clerk/nextjs/server";
 import { API_BASE_URL } from "@/lib/api";
+import { formatCash } from "@/lib/format";
 import { ProductSearch, SearchMatch } from "../../_components/ProductSearch";
+import StatTile from "../../_components/StatTile";
 
 type StockLevel = {
   productId: number;
@@ -20,6 +22,21 @@ async function fetchStockLevels(): Promise<StockLevel[]> {
   });
   if (!res.ok) {
     throw new Error(`Failed to load stock levels: ${res.status}`);
+  }
+  return res.json();
+}
+
+type StockValue = { stockValue: number; productsWithoutCost: number };
+
+async function fetchStockValue(): Promise<StockValue> {
+  const { getToken } = await auth();
+  const token = await getToken();
+  const res = await fetch(`${API_BASE_URL}/api/owner/stock/levels/value`, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to load stock value: ${res.status}`);
   }
   return res.json();
 }
@@ -68,7 +85,7 @@ function StockRow({ level }: { level: StockLevel }) {
 // attention (negative or low) surface first so they're visible without
 // scrolling past normal-stock rows on a phone.
 export default async function StockLevelsPage() {
-  const levels = await fetchStockLevels();
+  const [levels, value] = await Promise.all([fetchStockLevels(), fetchStockValue()]);
   const needsAttention = levels.filter((level) => level.status !== "OK");
   const inStock = levels.filter((level) => level.status === "OK");
 
@@ -78,6 +95,18 @@ export default async function StockLevelsPage() {
       <p className="mb-6 text-sm text-ink/60">
         Current balance for every active product, derived from the ledger.
       </p>
+
+      <div className="mb-6">
+        <StatTile
+          label="Stock value on hand"
+          value={formatCash(value.stockValue)}
+          hint={
+            value.productsWithoutCost > 0
+              ? `${value.productsWithoutCost} ${value.productsWithoutCost === 1 ? "product has" : "products have"} no cost set and ${value.productsWithoutCost === 1 ? "is" : "are"} left out. Set costs on Products.`
+              : "At cost, counting negative stock as zero."
+          }
+        />
+      </div>
 
       <ProductSearch>
       {needsAttention.length > 0 && (

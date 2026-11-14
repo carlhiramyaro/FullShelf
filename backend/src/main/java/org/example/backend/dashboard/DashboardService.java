@@ -33,11 +33,12 @@ public class DashboardService {
                 levels.stream().filter(level -> level.status() == StockLevelStatus.LOW).toList();
         List<StockLevelService.ProductStockLevel> negativeStock =
                 levels.stream().filter(level -> level.status() == StockLevelStatus.NEGATIVE).toList();
-        return new DashboardSummary(totals, lowStock, negativeStock);
+        return new DashboardSummary(totals, lowStock, negativeStock, stockLevelService.stockValue(levels));
     }
 
     public record DashboardSummary(SaleQueryService.SaleTotals totals,
                                     List<StockLevelService.ProductStockLevel> lowStock,
-                                    List<StockLevelService.ProductStockLevel> negativeStock) {
+                                    List<StockLevelService.ProductStockLevel> negativeStock,
+                                    StockLevelService.StockValue stockValue) {
     }
 }

@@ -29,6 +29,15 @@ public class StockLevelController {
         return stockLevelService.listLevels().stream().map(StockLevelResponse::from).toList();
     }
 
+    @GetMapping("/value")
+    public StockValueResponse value() {
+        StockLevelService.StockValue stockValue = stockLevelService.stockValue();
+        return new StockValueResponse(stockValue.value(), stockValue.productsWithoutCost());
+    }
+
+    public record StockValueResponse(BigDecimal stockValue, int productsWithoutCost) {
+    }
+
     public record StockLevelResponse(Long productId, String name, String unit, BigDecimal currentBalance,
                                       BigDecimal alertLevel, StockLevelStatus status) {
         // Public: DashboardController reuses this to shape its own

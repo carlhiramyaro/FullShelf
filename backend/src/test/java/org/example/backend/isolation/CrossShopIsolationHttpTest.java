@@ -386,6 +386,7 @@ class CrossShopIsolationHttpTest {
             "GET /api/owner/sales/{receiptNumber}",
             "POST /api/owner/sales/{receiptNumber}/void",
             "GET /api/owner/stock/levels",
+            "GET /api/owner/stock/levels/value", // scoped through listLevels; CostPriceIntegrationTest checks a second shop never moves it
             "GET /api/owner/stock/opening",
             "POST /api/owner/stock/opening",
             "GET /api/owner/stock/receive",

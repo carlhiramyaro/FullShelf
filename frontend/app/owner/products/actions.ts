@@ -33,12 +33,15 @@ export type ProductFormState = {
 
 function productBody(formData: FormData) {
   const cartonWeight = formData.get("cartonWeight");
+  const costPrice = String(formData.get("costPrice") ?? "").trim();
   return JSON.stringify({
     name: formData.get("name"),
     unit: formData.get("unit"),
     price: Number(formData.get("price")),
     alertLevel: Number(formData.get("alertLevel")),
     cartonWeight: cartonWeight ? Number(cartonWeight) : null,
+    // Blank is sent as null, which the backend reads as "leave the cost as it is".
+    costPrice: costPrice === "" ? null : Number(costPrice),
   });
 }
 
@@ -56,7 +59,7 @@ async function saveProduct(path: string, formData: FormData): Promise<ProductFor
   if (!res.ok) {
     const body = await res.json().catch(() => null);
     const values = Object.fromEntries(
-      ["name", "unit", "price", "alertLevel", "cartonWeight"].map((k) => [k, String(formData.get(k) ?? "")]),
+      ["name", "unit", "price", "alertLevel", "cartonWeight", "costPrice"].map((k) => [k, String(formData.get(k) ?? "")]),
     );
     return { error: body?.message ?? "That product could not be saved", values };
   }

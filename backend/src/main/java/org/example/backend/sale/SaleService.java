@@ -76,7 +76,7 @@ public class SaleService {
         List<LineResult> lineResults = new ArrayList<>();
         for (ResolvedLine resolved : resolvedLines) {
             SaleLine saleLine = saleLineRepository.save(new SaleLine(sale, resolved.product(), resolved.quantity(),
-                    resolved.unitPrice(), resolved.discount(), resolved.lineTotal()));
+                    resolved.unitPrice(), resolved.discount(), resolved.lineTotal(), resolved.unitCost()));
             stockMovementService.record(resolved.product(), resolved.quantity().negate(), StockMovementType.SALE,
                     staff, saleLine, null);
             lineResults.add(new LineResult(resolved.product(), resolved.quantity(), resolved.unitPrice(),
@@ -94,7 +94,7 @@ public class SaleService {
         BigDecimal rawTotal = quantity.multiply(unitPrice).setScale(2, RoundingMode.HALF_UP);
         BigDecimal discount = validateDiscount(product, line.discount(), rawTotal);
         BigDecimal lineTotal = rawTotal.subtract(discount).setScale(2, RoundingMode.HALF_UP);
-        return new ResolvedLine(product, quantity, unitPrice, discount, lineTotal);
+        return new ResolvedLine(product, quantity, unitPrice, discount, lineTotal, product.getCostPrice());
     }
 
     private Product getProduct(Long id) {
@@ -143,7 +143,7 @@ public class SaleService {
     }
 
     private record ResolvedLine(Product product, BigDecimal quantity, BigDecimal unitPrice, BigDecimal discount,
-                                 BigDecimal lineTotal) {
+                                 BigDecimal lineTotal, BigDecimal unitCost) {
     }
 
     public record LineRequest(Long productId, BigDecimal quantity, BigDecimal discount) {

@@ -18,27 +18,46 @@ public class ProductManagementService {
 
     private final ProductRepository productRepository;
     private final CurrentShop currentShop;
+    private final ProductCostService productCostService;
 
-    public ProductManagementService(ProductRepository productRepository, CurrentShop currentShop) {
+    public ProductManagementService(ProductRepository productRepository, CurrentShop currentShop,
+                                    ProductCostService productCostService) {
         this.productRepository = productRepository;
         this.currentShop = currentShop;
+        this.productCostService = productCostService;
     }
 
     @Transactional
     public Product createProduct(String name, ProductUnit unit, BigDecimal price, BigDecimal alertLevel,
                                   BigDecimal cartonWeight) {
+        return createProduct(name, unit, price, alertLevel, cartonWeight, null);
+    }
+
+    @Transactional
+    public Product createProduct(String name, ProductUnit unit, BigDecimal price, BigDecimal alertLevel,
+                                  BigDecimal cartonWeight, BigDecimal costPrice) {
         validate(name, unit, price, alertLevel, cartonWeight);
         if (productRepository.existsByShopAndNameIgnoreCase(currentShop.get(), name)) {
             throw new IllegalArgumentException("A product named \"" + name + "\" already exists");
         }
         Product product = new Product(currentShop.get(), name, unit, price, alertLevel);
         product.setCartonWeight(cartonWeight);
-        return productRepository.save(product);
+        Product saved = productRepository.save(product);
+        // A new product has no sales yet, so the first-cost fill finds nothing.
+        productCostService.applyCost(saved, costPrice);
+        return saved;
     }
 
     @Transactional
     public Product updateProduct(Long id, String name, ProductUnit unit, BigDecimal price, BigDecimal alertLevel,
                                   BigDecimal cartonWeight) {
+        return updateProduct(id, name, unit, price, alertLevel, cartonWeight, null);
+    }
+
+    /** A null {@code costPrice} leaves the cost unchanged; a cost can be changed but never cleared. */
+    @Transactional
+    public Product updateProduct(Long id, String name, ProductUnit unit, BigDecimal price, BigDecimal alertLevel,
+                                  BigDecimal cartonWeight, BigDecimal costPrice) {
         validate(name, unit, price, alertLevel, cartonWeight);
         Product product = getProduct(id);
         if (productRepository.existsByShopAndNameIgnoreCaseAndIdNot(currentShop.get(), name, id)) {
@@ -49,6 +68,7 @@ public class ProductManagementService {
         product.setPrice(price);
         product.setAlertLevel(alertLevel);
         product.setCartonWeight(cartonWeight);
+        productCostService.applyCost(product, costPrice);
         return product;
     }
 

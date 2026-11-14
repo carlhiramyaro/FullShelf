@@ -20,6 +20,7 @@ export async function receiveStockAction(
   const productId = Number(formData.get("productId"));
   const cartonCountRaw = String(formData.get("cartonCount") ?? "").trim();
   const actualQuantityRaw = String(formData.get("actualQuantity") ?? "").trim();
+  const costRaw = String(formData.get("costPerUnit") ?? "").trim();
 
   if (!productId || actualQuantityRaw === "") {
     return { error: "Pick a product and enter the actual quantity received" };
@@ -37,6 +38,8 @@ export async function receiveStockAction(
       productId,
       cartonCount: cartonCountRaw === "" ? null : Number(cartonCountRaw),
       actualQuantity: Number(actualQuantityRaw),
+      // Blank is null: the product's cost is left as it is.
+      costPerUnit: costRaw === "" ? null : Number(costRaw),
     }),
   });
 

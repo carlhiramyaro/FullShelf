@@ -60,6 +60,10 @@ public class StockMovement {
     @JoinColumn(name = "performed_by", nullable = false)
     private User performedBy;
 
+    // Cost per unit at the time, set only on WRITE_OFF rows (the database enforces that).
+    @Column(name = "unit_cost", precision = 12, scale = 2)
+    private BigDecimal unitCost;
+
     @Column(length = 500)
     private String note;
 
@@ -119,6 +123,14 @@ public class StockMovement {
 
     public User getPerformedBy() {
         return performedBy;
+    }
+
+    public BigDecimal getUnitCost() {
+        return unitCost;
+    }
+
+    public void setUnitCost(BigDecimal unitCost) {
+        this.unitCost = unitCost;
     }
 
     public String getNote() {

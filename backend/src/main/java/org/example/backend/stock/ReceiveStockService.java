@@ -1,6 +1,7 @@
 package org.example.backend.stock;
 
 import org.example.backend.product.Product;
+import org.example.backend.product.ProductCostService;
 import org.example.backend.product.ProductRepository;
 import org.example.backend.shop.CurrentShop;
 import org.example.backend.user.User;
@@ -26,11 +27,14 @@ public class ReceiveStockService {
     private final StockMovementService stockMovementService;
     private final StockBalanceService stockBalanceService;
     private final CurrentShop currentShop;
+    private final ProductCostService productCostService;
 
     public ReceiveStockService(ProductRepository productRepository,
                                 StockMovementService stockMovementService,
                                 StockBalanceService stockBalanceService,
-                                CurrentShop currentShop) {
+                                CurrentShop currentShop,
+                                ProductCostService productCostService) {
+        this.productCostService = productCostService;
         this.productRepository = productRepository;
         this.stockMovementService = stockMovementService;
         this.stockBalanceService = stockBalanceService;
@@ -48,9 +52,21 @@ public class ReceiveStockService {
 
     @Transactional
     public ReceiveResult receive(Long productId, Integer cartonCount, BigDecimal actualQuantity, User owner) {
+        return receive(productId, cartonCount, actualQuantity, null, owner);
+    }
+
+    /**
+     * {@code costPerUnit} is optional, per kg or per unit (the unit the product is sold in).
+     * When given it becomes the product's cost ("latest cost wins"); the validation, the
+     * no-clearing rule and the first-cost fill all live in ProductCostService.
+     */
+    @Transactional
+    public ReceiveResult receive(Long productId, Integer cartonCount, BigDecimal actualQuantity,
+                                 BigDecimal costPerUnit, User owner) {
         Product product = getProduct(productId);
         validateActualQuantity(product, actualQuantity);
         validateCartonCount(product, cartonCount);
+        productCostService.applyCost(product, costPerUnit);
 
         BigDecimal nominal = null;
         BigDecimal gap = null;
