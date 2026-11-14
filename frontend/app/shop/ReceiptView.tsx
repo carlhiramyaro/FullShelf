@@ -14,6 +14,7 @@ export type ReceiptData = {
   createdAt?: string;
   staffName?: string;
   voided?: boolean;
+  paymentMethod?: "CASH" | "MOMO";
 };
 
 function formatTime(iso: string): string {
@@ -42,6 +43,9 @@ export default function ReceiptView({
           {receipt.staffName && receipt.createdAt && " · "}
           {receipt.createdAt && formatTime(receipt.createdAt)}
         </p>
+      )}
+      {receipt.paymentMethod && (
+        <p className="text-xs text-ink/60">Paid by {receipt.paymentMethod === "MOMO" ? "MoMo" : "Cash"}</p>
       )}
       {receipt.voided && <p className="text-xs font-medium text-ink/60">Voided — record kept for reference</p>}
       <p className="text-5xl font-bold text-primary">GH₵{receipt.total.toFixed(2)}</p>

@@ -19,6 +19,7 @@ type SaleDetail = {
   staffName: string;
   voided: boolean;
   total: number;
+  paymentMethod: "CASH" | "MOMO";
   lines: SaleLineDetail[];
 };
 
@@ -55,7 +56,8 @@ export default async function OwnerSaleDetailPage({
         )}
       </div>
       <p className="mb-6 text-sm text-ink/60">
-        {sale.staffName} · {new Date(sale.createdAt).toLocaleString()}
+        {sale.staffName} · {new Date(sale.createdAt).toLocaleString()} ·{" "}
+        Paid by {sale.paymentMethod === "MOMO" ? "MoMo" : "Cash"}
       </p>
 
       <div className="mb-4 rounded-lg border border-ink/10 p-4">

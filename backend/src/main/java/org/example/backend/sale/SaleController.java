@@ -56,10 +56,12 @@ public class SaleController {
     @PostMapping
     public SaleResponse confirm(@RequestBody ConfirmSaleRequest request,
                                  @AuthenticationPrincipal StaffPrincipal staff) {
+        // Parsed first so a bad method is a 400 before anything else runs.
+        PaymentMethod paymentMethod = PaymentMethod.parse(request.paymentMethod());
         List<SaleService.LineRequest> lines = request.lines() == null ? List.of() : request.lines().stream()
                 .map(line -> new SaleService.LineRequest(line.productId(), line.quantity(), line.discount()))
                 .toList();
-        return SaleResponse.from(saleService.confirmSale(lines, staff.userId()));
+        return SaleResponse.from(saleService.confirmSale(lines, staff.userId(), paymentMethod));
     }
 
     // "Staff see today's sales only" (mvp.md) — SaleQueryService.listToday()
@@ -95,7 +97,7 @@ public class SaleController {
         }
     }
 
-    public record ConfirmSaleRequest(List<SaleLineRequest> lines) {
+    public record ConfirmSaleRequest(List<SaleLineRequest> lines, String paymentMethod) {
     }
 
     // No price field: the client shows an autofilled price for display, but
@@ -106,11 +108,12 @@ public class SaleController {
     }
 
     public record SaleResponse(Long receiptNumber, Instant createdAt, String staffName, List<LineResponse> lines,
-                                BigDecimal total) {
+                                BigDecimal total, String paymentMethod) {
         static SaleResponse from(SaleService.SaleResult result) {
             List<LineResponse> lines = result.lines().stream().map(LineResponse::from).toList();
             return new SaleResponse(result.receiptNumber(), result.sale().getCreatedAt(),
-                    result.staff().getName(), lines, result.total());
+                    result.staff().getName(), lines, result.total(),
+                    result.sale().getPaymentMethod().name());
         }
     }
 

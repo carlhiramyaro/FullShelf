@@ -10,6 +10,8 @@ const STAFF_SESSION_KEY = "fullshelf_staff_session";
 
 type SaleableProduct = { productId: number; name: string; unit: "KG" | "UNIT"; price: number; stock: number };
 
+type PaymentMethod = "CASH" | "MOMO";
+
 type CartLine = {
   productId: number;
   name: string;
@@ -48,6 +50,10 @@ export default function SalesScreen({
   const [showTodaysSales, setShowTodaysSales] = useState(false);
   const [query, setQuery] = useState("");
   const [orderOpen, setOrderOpen] = useState(false);
+  // Cash is the default so the common case stays one tap. "received" is only
+  // for the change calculation: it is never sent to the server or stored.
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH");
+  const [received, setReceived] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
 
   // Returns null when the list can't be refreshed, so a failed refresh after a
@@ -119,6 +125,7 @@ export default function SalesScreen({
             quantity: line.quantity,
             discount: line.discount ? Number(line.discount) : 0,
           })),
+          paymentMethod,
         }),
       });
       if (res.status === 401) {
@@ -130,6 +137,8 @@ export default function SalesScreen({
       }
       setReceipt((await res.json()) as ReceiptData);
       setCart([]);
+      setPaymentMethod("CASH");
+      setReceived("");
       setOrderOpen(false);
       fetchProducts().then((list) => {
         if (list) setProducts(list);
@@ -261,6 +270,10 @@ export default function SalesScreen({
             total={total}
             busy={busy}
             error={error}
+            paymentMethod={paymentMethod}
+            received={received}
+            onPaymentMethodChange={setPaymentMethod}
+            onReceivedChange={setReceived}
             onConfirm={handleConfirm}
             onClose={() => setOrderOpen(false)}
             onQuantityChange={updateQuantity}
@@ -292,6 +305,10 @@ function OrderPanel({
   total,
   busy,
   error,
+  paymentMethod,
+  received,
+  onPaymentMethodChange,
+  onReceivedChange,
   onConfirm,
   onClose,
   onQuantityChange,
@@ -302,12 +319,21 @@ function OrderPanel({
   total: number;
   busy: boolean;
   error: string | null;
+  paymentMethod: PaymentMethod;
+  received: string;
+  onPaymentMethodChange: (method: PaymentMethod) => void;
+  onReceivedChange: (received: string) => void;
   onConfirm: () => void;
   onClose: () => void;
   onQuantityChange: (productId: number, quantity: number) => void;
   onDiscountChange: (productId: number, discount: string) => void;
   onRemove: (productId: number) => void;
 }) {
+  // Whole pesewas, so 0.1 + 0.2 style float noise never shows up as change.
+  const totalPesewas = Math.round(total * 100);
+  const receivedPesewas = Math.round((Number(received) || 0) * 100);
+  const diffPesewas = receivedPesewas - totalPesewas;
+
   return (
     <>
       <div className="flex items-center justify-between p-4 pb-2">
@@ -333,6 +359,55 @@ function OrderPanel({
       <div className="flex flex-col gap-3 border-t border-ink/10 p-4">
         {error && <p className="text-sm text-ink">⚠ {error}</p>}
         <p className="text-2xl font-semibold text-primary">Total: GH₵{total.toFixed(2)}</p>
+
+        <fieldset className="flex flex-col gap-2">
+          <legend className="mb-1 text-sm text-ink/70">Paid by</legend>
+          <div className="flex gap-2">
+            {(["CASH", "MOMO"] as const).map((method) => {
+              const selected = paymentMethod === method;
+              return (
+                <button
+                  key={method}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => onPaymentMethodChange(method)}
+                  className={`flex-1 rounded border px-3 py-2 text-sm font-medium ${
+                    selected ? "border-secondary bg-secondary text-on-dark" : "border-ink/20 text-ink"
+                  }`}
+                >
+                  {selected ? "✓ " : ""}
+                  {method === "CASH" ? "Cash" : "MoMo"}
+                </button>
+              );
+            })}
+          </div>
+
+          {paymentMethod === "CASH" && (
+            <>
+              <label className="flex items-center gap-2 text-sm text-ink/70">
+                Amount received (GH₵)
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  min="0"
+                  value={received}
+                  onChange={(e) => onReceivedChange(e.target.value)}
+                  placeholder="0.00"
+                  className="w-28 rounded border border-ink/20 bg-bg px-2 py-1 text-ink"
+                />
+              </label>
+              {received !== "" && cart.length > 0 && (
+                <p className="text-sm font-medium text-ink">
+                  {diffPesewas >= 0
+                    ? `Change due: GH₵${(diffPesewas / 100).toFixed(2)}`
+                    : `⚠ Short by GH₵${(-diffPesewas / 100).toFixed(2)}`}
+                </p>
+              )}
+            </>
+          )}
+        </fieldset>
+
         <button
           onClick={onConfirm}
           disabled={busy || cart.length === 0}

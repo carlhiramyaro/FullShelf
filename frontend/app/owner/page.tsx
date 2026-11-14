@@ -16,6 +16,9 @@ type DashboardSummary = {
   salesToday: number;
   discountsToday: number;
   expectedCash: number;
+  expectedMomo: number;
+  salesCash: number;
+  salesMomo: number;
   lowStock: StockLevel[];
   negativeStock: StockLevel[];
 };
@@ -49,10 +52,15 @@ export default async function DashboardPage() {
     <div className="mx-auto max-w-2xl">
       <h1 className="mb-6 text-2xl font-semibold text-ink">Dashboard</h1>
 
-      <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <StatTile label="Sales today" value={formatCash(summary.salesToday)} />
+      <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <StatTile
+          label="Sales today"
+          value={formatCash(summary.salesToday)}
+          hint={`Cash ${formatCash(summary.salesCash)} · MoMo ${formatCash(summary.salesMomo)}`}
+        />
         <StatTile label="Discounts today" value={formatCash(summary.discountsToday)} />
         <StatTile label="Expected cash" value={formatCash(summary.expectedCash)} />
+        <StatTile label="Expected MoMo" value={formatCash(summary.expectedMomo)} />
       </div>
 
       {summary.negativeStock.length > 0 && (

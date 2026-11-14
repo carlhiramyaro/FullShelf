@@ -19,14 +19,17 @@ public interface SaleLineRepository extends JpaRepository<SaleLine, Long> {
     @Query("select coalesce(sum(l.lineTotal), 0) from SaleLine l where l.sale.id = :saleId")
     BigDecimal sumLineTotalBySaleId(@Param("saleId") Long saleId);
 
-    // Dashboard's "expected cash" — lineTotal is already net of discount
+    // Per payment method (I1): expected cash is CASH sales, expected MoMo is
+    // MOMO sales. Dashboard's "expected cash" — lineTotal is already net of discount
     // (SaleService.resolveLine), so this sum doubles as expected cash with
     // no separate calculation. Voided sales are excluded: Void's own
     // contract is "expected cash reduced," so a voided line must not count
     // here even though the row itself stays visible everywhere else.
     @Query("select coalesce(sum(l.lineTotal), 0) from SaleLine l "
-            + "where l.sale.shop = :shop and l.sale.createdAt >= :from and l.sale.voided = false")
-    BigDecimal sumLineTotalSince(@Param("shop") Shop shop, @Param("from") Instant from);
+            + "where l.sale.shop = :shop and l.sale.createdAt >= :from and l.sale.voided = false "
+            + "and l.sale.paymentMethod = :method")
+    BigDecimal sumLineTotalSince(@Param("shop") Shop shop, @Param("from") Instant from,
+                                 @Param("method") PaymentMethod method);
 
     // Dashboard's "discounts today." Same voided exclusion as sumLineTotalSince.
     @Query("select coalesce(sum(l.discount), 0) from SaleLine l "
@@ -36,8 +39,10 @@ public interface SaleLineRepository extends JpaRepository<SaleLine, Long> {
     // Day close's totals: a closed range instead of "since now," so a picked
     // day's totals don't include everything after it. Same voided exclusion.
     @Query("select coalesce(sum(l.lineTotal), 0) from SaleLine l "
-            + "where l.sale.shop = :shop and l.sale.createdAt >= :from and l.sale.createdAt < :to and l.sale.voided = false")
-    BigDecimal sumLineTotalBetween(@Param("shop") Shop shop, @Param("from") Instant from, @Param("to") Instant to);
+            + "where l.sale.shop = :shop and l.sale.createdAt >= :from and l.sale.createdAt < :to and l.sale.voided = false "
+            + "and l.sale.paymentMethod = :method")
+    BigDecimal sumLineTotalBetween(@Param("shop") Shop shop, @Param("from") Instant from, @Param("to") Instant to,
+                                   @Param("method") PaymentMethod method);
 
     @Query("select coalesce(sum(l.discount), 0) from SaleLine l "
             + "where l.sale.shop = :shop and l.sale.createdAt >= :from and l.sale.createdAt < :to and l.sale.voided = false")

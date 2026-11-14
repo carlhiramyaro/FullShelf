@@ -11,12 +11,16 @@ type DaySale = {
   total: number;
   discount: number;
   voided: boolean;
+  paymentMethod: "CASH" | "MOMO";
 };
 
 type DayClose = {
   totalSales: number;
   totalDiscounts: number;
   expectedCash: number;
+  expectedMomo: number;
+  salesCash: number;
+  salesMomo: number;
   sales: DaySale[];
 };
 
@@ -75,10 +79,15 @@ export default async function DayClosePage({
         </button>
       </form>
 
-      <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <StatTile label="Sales" value={formatCash(dayClose.totalSales)} />
+      <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <StatTile
+          label="Sales"
+          value={formatCash(dayClose.totalSales)}
+          hint={`Cash ${formatCash(dayClose.salesCash)} · MoMo ${formatCash(dayClose.salesMomo)}`}
+        />
         <StatTile label="Discounts" value={formatCash(dayClose.totalDiscounts)} />
         <StatTile label="Expected cash" value={formatCash(dayClose.expectedCash)} />
+        <StatTile label="Expected MoMo" value={formatCash(dayClose.expectedMomo)} />
       </div>
 
       {dayClose.sales.length === 0 ? (
@@ -94,7 +103,8 @@ export default async function DayClosePage({
                 <span>
                   <span className="font-medium text-ink">#{sale.receiptNumber}</span>{" "}
                   <span className="text-xs text-ink/50">
-                    {sale.staffName} · {new Date(sale.createdAt).toLocaleString()}
+                    {sale.staffName} · {new Date(sale.createdAt).toLocaleString()} ·{" "}
+                    {sale.paymentMethod === "MOMO" ? "MoMo" : "Cash"}
                   </span>
                   {sale.voided && (
                     <span className="ml-2 text-xs font-medium text-error">Voided</span>

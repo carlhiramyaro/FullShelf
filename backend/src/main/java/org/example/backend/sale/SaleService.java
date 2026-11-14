@@ -53,8 +53,12 @@ public class SaleService {
         return productRepository.findByShopOrderByName(currentShop.get()).stream().filter(Product::isActive).toList();
     }
 
-    @Transactional
     public SaleResult confirmSale(List<LineRequest> lines, Long staffUserId) {
+        return confirmSale(lines, staffUserId, PaymentMethod.CASH);
+    }
+
+    @Transactional
+    public SaleResult confirmSale(List<LineRequest> lines, Long staffUserId, PaymentMethod paymentMethod) {
         if (lines == null || lines.isEmpty()) {
             throw new IllegalArgumentException("A sale needs at least one line");
         }
@@ -67,7 +71,7 @@ public class SaleService {
         List<ResolvedLine> resolvedLines = lines.stream().map(this::resolveLine).toList();
 
         Long receiptNumber = shopRepository.nextReceiptNumber(staff.getShop().getId());
-        Sale sale = saleRepository.save(new Sale(staff, receiptNumber));
+        Sale sale = saleRepository.save(new Sale(staff, receiptNumber, paymentMethod));
 
         List<LineResult> lineResults = new ArrayList<>();
         for (ResolvedLine resolved : resolvedLines) {

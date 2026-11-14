@@ -6,6 +6,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -35,6 +37,10 @@ public class Sale {
     @Column(nullable = false)
     private boolean voided = false;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_method", nullable = false, updatable = false)
+    private PaymentMethod paymentMethod;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -45,8 +51,9 @@ public class Sale {
     protected Sale() {
     }
 
-    public Sale(User staff, Long receiptNumber) {
+    public Sale(User staff, Long receiptNumber, PaymentMethod paymentMethod) {
         this.staff = staff;
+        this.paymentMethod = paymentMethod;
         this.shop = staff.getShop();
         this.receiptNumber = receiptNumber;
     }
@@ -65,6 +72,10 @@ public class Sale {
 
     public User getStaff() {
         return staff;
+    }
+
+    public PaymentMethod getPaymentMethod() {
+        return paymentMethod;
     }
 
     public boolean isVoided() {

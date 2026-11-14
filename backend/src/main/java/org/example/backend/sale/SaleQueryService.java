@@ -51,9 +51,10 @@ public class SaleQueryService {
     // "no cached derived value" convention as everything else in this app.
     @Transactional(readOnly = true)
     public SaleTotals todayTotals() {
-        BigDecimal expectedCash = saleLineRepository.sumLineTotalSince(currentShop.get(), startOfToday());
+        BigDecimal cash = saleLineRepository.sumLineTotalSince(currentShop.get(), startOfToday(), PaymentMethod.CASH);
+        BigDecimal momo = saleLineRepository.sumLineTotalSince(currentShop.get(), startOfToday(), PaymentMethod.MOMO);
         BigDecimal discounts = saleLineRepository.sumDiscountSince(currentShop.get(), startOfToday());
-        return new SaleTotals(expectedCash.add(discounts), discounts, expectedCash);
+        return SaleTotals.of(cash, momo, discounts);
     }
 
     // Day close's list for a picked date. A separate DaySaleSummary rather
@@ -69,7 +70,8 @@ public class SaleQueryService {
                 .stream()
                 .map(sale -> new DaySaleSummary(sale.getReceiptNumber(), sale.getCreatedAt(),
                         sale.getStaff().getName(), saleLineRepository.sumLineTotalBySaleId(sale.getId()),
-                        saleLineRepository.sumDiscountBySaleId(sale.getId()), sale.isVoided()))
+                        saleLineRepository.sumDiscountBySaleId(sale.getId()), sale.isVoided(),
+                        sale.getPaymentMethod().name()))
                 .toList();
     }
 
@@ -79,9 +81,10 @@ public class SaleQueryService {
     public SaleTotals dayTotals(LocalDate date) {
         Instant from = startOfDay(date);
         Instant to = startOfDay(date.plusDays(1));
-        BigDecimal expectedCash = saleLineRepository.sumLineTotalBetween(currentShop.get(), from, to);
+        BigDecimal cash = saleLineRepository.sumLineTotalBetween(currentShop.get(), from, to, PaymentMethod.CASH);
+        BigDecimal momo = saleLineRepository.sumLineTotalBetween(currentShop.get(), from, to, PaymentMethod.MOMO);
         BigDecimal discounts = saleLineRepository.sumDiscountBetween(currentShop.get(), from, to);
-        return new SaleTotals(expectedCash.add(discounts), discounts, expectedCash);
+        return SaleTotals.of(cash, momo, discounts);
     }
 
     @Transactional(readOnly = true)
@@ -92,7 +95,7 @@ public class SaleQueryService {
         List<SaleLineDetail> lineDetails = lines.stream().map(SaleLineDetail::from).toList();
         BigDecimal total = lines.stream().map(SaleLine::getLineTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
         return new SaleDetail(sale.getReceiptNumber(), sale.getCreatedAt(), sale.getStaff().getName(),
-                sale.isVoided(), total, lineDetails);
+                sale.isVoided(), total, lineDetails, sale.getPaymentMethod().name());
     }
 
     // Accra (this app's only shop, per mvp.md) is UTC+0 with no DST, so a
@@ -124,14 +127,20 @@ public class SaleQueryService {
     }
 
     public record SaleDetail(Long receiptNumber, Instant createdAt, String staffName, boolean voided,
-                              BigDecimal total, List<SaleLineDetail> lines) {
+                              BigDecimal total, List<SaleLineDetail> lines, String paymentMethod) {
     }
 
-    public record SaleTotals(BigDecimal grossSales, BigDecimal discounts, BigDecimal expectedCash) {
+    // grossSales is net-of-discount sales plus discounts, across both methods.
+    // Until expenses exist (I3) expected cash/MoMo are just that method's sales.
+    public record SaleTotals(BigDecimal grossSales, BigDecimal discounts, BigDecimal salesCash,
+                              BigDecimal salesMomo, BigDecimal expectedCash, BigDecimal expectedMomo) {
+        static SaleTotals of(BigDecimal cash, BigDecimal momo, BigDecimal discounts) {
+            return new SaleTotals(cash.add(momo).add(discounts), discounts, cash, momo, cash, momo);
+        }
     }
 
     public record DaySaleSummary(Long receiptNumber, Instant createdAt, String staffName, BigDecimal total,
-                                  BigDecimal discount, boolean voided) {
+                                  BigDecimal discount, boolean voided, String paymentMethod) {
     }
 
     public record SaleLineDetail(Long productId, String productName, String unit, BigDecimal quantity,
