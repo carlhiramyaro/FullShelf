@@ -2,6 +2,7 @@ package org.example.backend.stock;
 
 import org.example.backend.product.Product;
 import org.example.backend.product.ProductCostService;
+import org.example.backend.product.ProductPriceHistoryService;
 import org.example.backend.product.ProductRepository;
 import org.example.backend.shop.CurrentShop;
 import org.example.backend.user.User;
@@ -28,12 +29,15 @@ public class ReceiveStockService {
     private final StockBalanceService stockBalanceService;
     private final CurrentShop currentShop;
     private final ProductCostService productCostService;
+    private final ProductPriceHistoryService priceHistoryService;
 
     public ReceiveStockService(ProductRepository productRepository,
                                 StockMovementService stockMovementService,
                                 StockBalanceService stockBalanceService,
                                 CurrentShop currentShop,
-                                ProductCostService productCostService) {
+                                ProductCostService productCostService,
+                                ProductPriceHistoryService priceHistoryService) {
+        this.priceHistoryService = priceHistoryService;
         this.productCostService = productCostService;
         this.productRepository = productRepository;
         this.stockMovementService = stockMovementService;
@@ -67,6 +71,7 @@ public class ReceiveStockService {
         validateActualQuantity(product, actualQuantity);
         validateCartonCount(product, cartonCount);
         productCostService.applyCost(product, costPerUnit);
+        priceHistoryService.recordIfChanged(product, owner);
 
         BigDecimal nominal = null;
         BigDecimal gap = null;

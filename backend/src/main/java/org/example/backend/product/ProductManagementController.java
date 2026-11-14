@@ -1,7 +1,11 @@
 package org.example.backend.product;
 
+import org.example.backend.user.User;
+import org.example.backend.user.UserRepository;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,8 +29,12 @@ public class ProductManagementController {
 
     private final ProductManagementService productManagementService;
 
-    public ProductManagementController(ProductManagementService productManagementService) {
+    private final UserRepository userRepository;
+
+    public ProductManagementController(ProductManagementService productManagementService,
+                                       UserRepository userRepository) {
         this.productManagementService = productManagementService;
+        this.userRepository = userRepository;
     }
 
     @GetMapping
@@ -35,24 +43,30 @@ public class ProductManagementController {
     }
 
     @PostMapping
-    public ProductResponse create(@RequestBody ProductRequest request) {
+    public ProductResponse create(@RequestBody ProductRequest request, @AuthenticationPrincipal Jwt jwt) {
         Product product = productManagementService.createProduct(
                 request.name(), request.unit(), request.price(), request.alertLevel(), request.cartonWeight(),
-                request.costPrice());
+                request.costPrice(), owner(jwt));
         return ProductResponse.from(product);
     }
 
     @PostMapping("/{id}")
-    public ProductResponse update(@PathVariable Long id, @RequestBody ProductRequest request) {
+    public ProductResponse update(@PathVariable Long id, @RequestBody ProductRequest request,
+                                  @AuthenticationPrincipal Jwt jwt) {
         Product product = productManagementService.updateProduct(
                 id, request.name(), request.unit(), request.price(), request.alertLevel(), request.cartonWeight(),
-                request.costPrice());
+                request.costPrice(), owner(jwt));
         return ProductResponse.from(product);
     }
 
     @PostMapping("/{id}/deactivate")
     public void deactivate(@PathVariable Long id) {
         productManagementService.deactivate(id);
+    }
+
+    // SecurityConfig already guarantees this JWT resolved to an OWNER user.
+    private User owner(Jwt jwt) {
+        return userRepository.findByClerkUserId(jwt.getSubject()).orElseThrow();
     }
 
     @ExceptionHandler({IllegalArgumentException.class, DataIntegrityViolationException.class})

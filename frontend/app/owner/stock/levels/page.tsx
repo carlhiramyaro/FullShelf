@@ -1,4 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
+import Link from "next/link";
 import { API_BASE_URL } from "@/lib/api";
 import { formatCash } from "@/lib/format";
 import { ProductSearch, SearchMatch } from "../../_components/ProductSearch";
@@ -75,6 +76,12 @@ function StockRow({ level }: { level: StockLevel }) {
           {level.currentBalance} {unitLabel(level.unit)}
         </span>
         <StatusBadge status={level.status} />
+        <Link
+          href={`/owner/products/${level.productId}/history`}
+          className="text-xs font-medium text-secondary underline hover:text-primary"
+        >
+          History
+        </Link>
       </span>
     </SearchMatch>
   );

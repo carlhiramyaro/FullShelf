@@ -1,6 +1,7 @@
 package org.example.backend.product;
 
 import org.example.backend.shop.CurrentShop;
+import org.example.backend.user.User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,9 +20,12 @@ public class ProductManagementService {
     private final ProductRepository productRepository;
     private final CurrentShop currentShop;
     private final ProductCostService productCostService;
+    private final ProductPriceHistoryService priceHistoryService;
 
     public ProductManagementService(ProductRepository productRepository, CurrentShop currentShop,
-                                    ProductCostService productCostService) {
+                                    ProductCostService productCostService,
+                                    ProductPriceHistoryService priceHistoryService) {
+        this.priceHistoryService = priceHistoryService;
         this.productRepository = productRepository;
         this.currentShop = currentShop;
         this.productCostService = productCostService;
@@ -36,6 +40,13 @@ public class ProductManagementService {
     @Transactional
     public Product createProduct(String name, ProductUnit unit, BigDecimal price, BigDecimal alertLevel,
                                   BigDecimal cartonWeight, BigDecimal costPrice) {
+        return createProduct(name, unit, price, alertLevel, cartonWeight, costPrice, null);
+    }
+
+    /** {@code changedBy} is who the price history records; the controller passes the signed-in owner. */
+    @Transactional
+    public Product createProduct(String name, ProductUnit unit, BigDecimal price, BigDecimal alertLevel,
+                                  BigDecimal cartonWeight, BigDecimal costPrice, User changedBy) {
         validate(name, unit, price, alertLevel, cartonWeight);
         if (productRepository.existsByShopAndNameIgnoreCase(currentShop.get(), name)) {
             throw new IllegalArgumentException("A product named \"" + name + "\" already exists");
@@ -45,6 +56,7 @@ public class ProductManagementService {
         Product saved = productRepository.save(product);
         // A new product has no sales yet, so the first-cost fill finds nothing.
         productCostService.applyCost(saved, costPrice);
+        priceHistoryService.recordIfChanged(saved, changedBy); // the product's starting point
         return saved;
     }
 
@@ -58,6 +70,12 @@ public class ProductManagementService {
     @Transactional
     public Product updateProduct(Long id, String name, ProductUnit unit, BigDecimal price, BigDecimal alertLevel,
                                   BigDecimal cartonWeight, BigDecimal costPrice) {
+        return updateProduct(id, name, unit, price, alertLevel, cartonWeight, costPrice, null);
+    }
+
+    @Transactional
+    public Product updateProduct(Long id, String name, ProductUnit unit, BigDecimal price, BigDecimal alertLevel,
+                                  BigDecimal cartonWeight, BigDecimal costPrice, User changedBy) {
         validate(name, unit, price, alertLevel, cartonWeight);
         Product product = getProduct(id);
         if (productRepository.existsByShopAndNameIgnoreCaseAndIdNot(currentShop.get(), name, id)) {
@@ -69,6 +87,7 @@ public class ProductManagementService {
         product.setAlertLevel(alertLevel);
         product.setCartonWeight(cartonWeight);
         productCostService.applyCost(product, costPrice);
+        priceHistoryService.recordIfChanged(product, changedBy);
         return product;
     }
 

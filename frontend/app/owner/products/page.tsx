@@ -1,4 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
+import Link from "next/link";
 import { API_BASE_URL } from "@/lib/api";
 import { ProductSearch, SearchMatch } from "../_components/ProductSearch";
 import { deactivateProductAction } from "./actions";
@@ -38,6 +39,12 @@ export default async function ProductsPage() {
             className="rounded-lg border border-ink/10 p-4"
           >
             <ProductForm product={product} />
+            <Link
+              href={`/owner/products/${product.id}/history`}
+              className="mt-3 inline-block text-sm font-medium text-secondary underline hover:text-primary"
+            >
+              History
+            </Link>
             {product.active && (
               <form action={deactivateProductAction} className="mt-3">
                 <input type="hidden" name="productId" value={product.id} />

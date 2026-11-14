@@ -220,6 +220,8 @@ class CrossShopIsolationHttpTest {
 
         mockMvc.perform(get("/api/owner/stock/reverse/" + bProduct).with(owner))
                 .andExpect(status().isBadRequest());
+        mockMvc.perform(get("/api/owner/products/" + bProduct + "/history").with(owner))
+                .andExpect(status().isBadRequest());
         mockMvc.perform(json(post("/api/owner/stock/reverse").with(owner),
                 "{\"movementId\":" + b.opening().getId() + "}")).andExpect(status().isBadRequest());
 
@@ -376,6 +378,7 @@ class CrossShopIsolationHttpTest {
     private static final Set<String> COVERED = Set.of(
             "GET /api/owner/products",
             "POST /api/owner/products/{id}",
+            "GET /api/owner/products/{id}/history", // ProductHistoryIntegrationTest too: B's product id is "No product N"
             "POST /api/owner/products/{id}/deactivate",
             "GET /api/owner/staff",
             "POST /api/owner/staff/{id}/reset-pin",
