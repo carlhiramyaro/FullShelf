@@ -1,5 +1,7 @@
 package org.example.backend.sale;
 
+import org.example.backend.expense.ExpensePaidFrom;
+import org.example.backend.expense.ExpenseRepository;
 import org.example.backend.shop.CurrentShop;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,10 +28,12 @@ public class SaleQueryService {
 
     private final SaleRepository saleRepository;
     private final SaleLineRepository saleLineRepository;
+    private final ExpenseRepository expenseRepository;
     private final CurrentShop currentShop;
 
     public SaleQueryService(SaleRepository saleRepository, SaleLineRepository saleLineRepository,
-                             CurrentShop currentShop) {
+                             ExpenseRepository expenseRepository, CurrentShop currentShop) {
+        this.expenseRepository = expenseRepository;
         this.saleRepository = saleRepository;
         this.saleLineRepository = saleLineRepository;
         this.currentShop = currentShop;
@@ -54,7 +58,9 @@ public class SaleQueryService {
         BigDecimal cash = saleLineRepository.sumLineTotalSince(currentShop.get(), startOfToday(), PaymentMethod.CASH);
         BigDecimal momo = saleLineRepository.sumLineTotalSince(currentShop.get(), startOfToday(), PaymentMethod.MOMO);
         BigDecimal discounts = saleLineRepository.sumDiscountSince(currentShop.get(), startOfToday());
-        return SaleTotals.of(cash, momo, discounts);
+        LocalDate today = LocalDate.now(ZoneOffset.UTC);
+        return SaleTotals.of(cash, momo, discounts, expenses(today, today, ExpensePaidFrom.CASH),
+                expenses(today, today, ExpensePaidFrom.MOMO));
     }
 
     // Day close's list for a picked date. A separate DaySaleSummary rather
@@ -84,7 +90,8 @@ public class SaleQueryService {
         BigDecimal cash = saleLineRepository.sumLineTotalBetween(currentShop.get(), from, to, PaymentMethod.CASH);
         BigDecimal momo = saleLineRepository.sumLineTotalBetween(currentShop.get(), from, to, PaymentMethod.MOMO);
         BigDecimal discounts = saleLineRepository.sumDiscountBetween(currentShop.get(), from, to);
-        return SaleTotals.of(cash, momo, discounts);
+        return SaleTotals.of(cash, momo, discounts, expenses(date, date, ExpensePaidFrom.CASH),
+                expenses(date, date, ExpensePaidFrom.MOMO));
     }
 
     @Transactional(readOnly = true)
@@ -96,6 +103,11 @@ public class SaleQueryService {
         BigDecimal total = lines.stream().map(SaleLine::getLineTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
         return new SaleDetail(sale.getReceiptNumber(), sale.getCreatedAt(), sale.getStaff().getName(),
                 sale.isVoided(), total, lineDetails, sale.getPaymentMethod().name());
+    }
+
+    // Expenses are dated by the owner's chosen calendar day (UTC), not by when they were keyed.
+    private BigDecimal expenses(LocalDate from, LocalDate to, ExpensePaidFrom paidFrom) {
+        return expenseRepository.sumAmount(currentShop.get(), from, to, paidFrom);
     }
 
     // Accra (this app's only shop, per mvp.md) is UTC+0 with no DST, so a
@@ -131,11 +143,15 @@ public class SaleQueryService {
     }
 
     // grossSales is net-of-discount sales plus discounts, across both methods.
-    // Until expenses exist (I3) expected cash/MoMo are just that method's sales.
+    // Expected cash is cash sales minus cash expenses, expected MoMo likewise (I3).
+    // Expenses paid from OTHER touch neither. Not a till count: no float, no recount.
     public record SaleTotals(BigDecimal grossSales, BigDecimal discounts, BigDecimal salesCash,
-                              BigDecimal salesMomo, BigDecimal expectedCash, BigDecimal expectedMomo) {
-        static SaleTotals of(BigDecimal cash, BigDecimal momo, BigDecimal discounts) {
-            return new SaleTotals(cash.add(momo).add(discounts), discounts, cash, momo, cash, momo);
+                              BigDecimal salesMomo, BigDecimal expectedCash, BigDecimal expectedMomo,
+                              BigDecimal expensesCash, BigDecimal expensesMomo) {
+        static SaleTotals of(BigDecimal cash, BigDecimal momo, BigDecimal discounts,
+                             BigDecimal expensesCash, BigDecimal expensesMomo) {
+            return new SaleTotals(cash.add(momo).add(discounts), discounts, cash, momo,
+                    cash.subtract(expensesCash), momo.subtract(expensesMomo), expensesCash, expensesMomo);
         }
     }
 

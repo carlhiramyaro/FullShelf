@@ -46,7 +46,8 @@ public class DayCloseController {
         SaleQueryService.SaleTotals totals = saleQueryService.dayTotals(date);
         List<SaleQueryService.DaySaleSummary> sales = saleQueryService.listForDay(date);
         return new DayCloseResponse(totals.grossSales(), totals.discounts(), totals.expectedCash(),
-                totals.expectedMomo(), totals.salesCash(), totals.salesMomo(), sales);
+                totals.expectedMomo(), totals.salesCash(), totals.salesMomo(), sales,
+                totals.expensesCash(), totals.expensesMomo());
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
@@ -57,7 +58,8 @@ public class DayCloseController {
 
     public record DayCloseResponse(BigDecimal totalSales, BigDecimal totalDiscounts, BigDecimal expectedCash,
                                     BigDecimal expectedMomo, BigDecimal salesCash, BigDecimal salesMomo,
-                                    List<SaleQueryService.DaySaleSummary> sales) {
+                                    List<SaleQueryService.DaySaleSummary> sales,
+                                    BigDecimal expensesCash, BigDecimal expensesMomo) {
     }
 
     public record ErrorResponse(String message) {

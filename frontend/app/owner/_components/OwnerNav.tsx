@@ -19,6 +19,7 @@ const LINKS = [
   { href: "/owner/stock/reverse", label: "Reverse entry" },
   { href: "/owner/sales", label: "Sales" },
   { href: "/owner/day-close", label: "Day close" },
+  { href: "/owner/expenses", label: "Expenses" },
   { href: "/owner/settings", label: "Settings" },
 ];
 

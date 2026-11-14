@@ -22,6 +22,8 @@ type DayClose = {
   salesCash: number;
   salesMomo: number;
   sales: DaySale[];
+  expensesCash: number;
+  expensesMomo: number;
 };
 
 async function fetchDayClose(date: string): Promise<DayClose> {
@@ -86,8 +88,16 @@ export default async function DayClosePage({
           hint={`Cash ${formatCash(dayClose.salesCash)} · MoMo ${formatCash(dayClose.salesMomo)}`}
         />
         <StatTile label="Discounts" value={formatCash(dayClose.totalDiscounts)} />
-        <StatTile label="Expected cash" value={formatCash(dayClose.expectedCash)} />
-        <StatTile label="Expected MoMo" value={formatCash(dayClose.expectedMomo)} />
+        <StatTile
+          label="Expected cash"
+          value={formatCash(dayClose.expectedCash)}
+          hint={`Cash sales ${formatCash(dayClose.salesCash)} − expenses ${formatCash(dayClose.expensesCash)}`}
+        />
+        <StatTile
+          label="Expected MoMo"
+          value={formatCash(dayClose.expectedMomo)}
+          hint={`MoMo sales ${formatCash(dayClose.salesMomo)} − expenses ${formatCash(dayClose.expensesMomo)}`}
+        />
       </div>
 
       {dayClose.sales.length === 0 ? (

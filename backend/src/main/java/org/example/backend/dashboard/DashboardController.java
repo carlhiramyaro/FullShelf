@@ -38,12 +38,15 @@ public class DashboardController {
                 summary.lowStock().stream().map(StockLevelResponse::from).toList(),
                 summary.negativeStock().stream().map(StockLevelResponse::from).toList(),
                 summary.stockValue().value(),
-                summary.stockValue().productsWithoutCost());
+                summary.stockValue().productsWithoutCost(),
+                summary.totals().expensesCash(),
+                summary.totals().expensesMomo());
     }
 
     public record DashboardResponse(BigDecimal salesToday, BigDecimal discountsToday, BigDecimal expectedCash,
                                      BigDecimal expectedMomo, BigDecimal salesCash, BigDecimal salesMomo,
                                      List<StockLevelResponse> lowStock, List<StockLevelResponse> negativeStock,
-                                     BigDecimal stockValue, int productsWithoutCost) {
+                                     BigDecimal stockValue, int productsWithoutCost,
+                                     BigDecimal expensesCash, BigDecimal expensesMomo) {
     }
 }

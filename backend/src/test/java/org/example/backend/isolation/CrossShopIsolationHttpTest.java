@@ -398,6 +398,8 @@ class CrossShopIsolationHttpTest {
             "POST /api/owner/stock/reverse",
             "GET /api/owner/dashboard",
             "GET /api/owner/day-close/{date}",
+            "GET /api/owner/expenses",             // ExpenseIntegrationTest: a second shop sees none of them
+            "POST /api/owner/expenses/{id}/void",  // ExpenseIntegrationTest: another shop's id gets "No expense N"
             "GET /api/staff/roster",
             "POST /api/staff/login",
             "GET /api/staff/sales",
@@ -412,6 +414,7 @@ class CrossShopIsolationHttpTest {
             "POST /api/owner/devices/pairing-code", // creates a code in the caller's own shop
             "POST /api/owner/products",     // creates in the caller's own shop; shop never read from the body
             "POST /api/owner/staff",        // same
+            "POST /api/owner/expenses",     // creates in the caller's own shop; shop copied from the owner row
             "POST /api/staff/logout");      // ends the caller's own session
 
     @Test
