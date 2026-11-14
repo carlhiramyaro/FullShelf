@@ -81,17 +81,23 @@ public class SaleQueryService {
                 .toList();
     }
 
-    // Day close's totals for a picked date — same derivation as
-    // todayTotals(), just over a closed range instead of "since now."
+    // Day close's totals for a picked date: a one-day range.
     @Transactional(readOnly = true)
     public SaleTotals dayTotals(LocalDate date) {
-        Instant from = startOfDay(date);
-        Instant to = startOfDay(date.plusDays(1));
+        return rangeTotals(date, date);
+    }
+
+    // Totals for an inclusive range of UTC dates (Day close is the one-day case; I4 reports use
+    // any range). One definition of the boundaries, so the two screens can't disagree.
+    @Transactional(readOnly = true)
+    public SaleTotals rangeTotals(LocalDate fromDate, LocalDate toDate) {
+        Instant from = startOfDay(fromDate);
+        Instant to = startOfDay(toDate.plusDays(1));
         BigDecimal cash = saleLineRepository.sumLineTotalBetween(currentShop.get(), from, to, PaymentMethod.CASH);
         BigDecimal momo = saleLineRepository.sumLineTotalBetween(currentShop.get(), from, to, PaymentMethod.MOMO);
         BigDecimal discounts = saleLineRepository.sumDiscountBetween(currentShop.get(), from, to);
-        return SaleTotals.of(cash, momo, discounts, expenses(date, date, ExpensePaidFrom.CASH),
-                expenses(date, date, ExpensePaidFrom.MOMO));
+        return SaleTotals.of(cash, momo, discounts, expenses(fromDate, toDate, ExpensePaidFrom.CASH),
+                expenses(fromDate, toDate, ExpensePaidFrom.MOMO));
     }
 
     @Transactional(readOnly = true)

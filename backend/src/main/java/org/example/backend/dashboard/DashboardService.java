@@ -1,5 +1,6 @@
 package org.example.backend.dashboard;
 
+import org.example.backend.report.ReportService;
 import org.example.backend.sale.SaleQueryService;
 import org.example.backend.stock.StockLevelService;
 import org.example.backend.stock.StockLevelStatus;
@@ -20,8 +21,11 @@ public class DashboardService {
 
     private final SaleQueryService saleQueryService;
     private final StockLevelService stockLevelService;
+    private final ReportService reportService;
 
-    public DashboardService(SaleQueryService saleQueryService, StockLevelService stockLevelService) {
+    public DashboardService(SaleQueryService saleQueryService, StockLevelService stockLevelService,
+                            ReportService reportService) {
+        this.reportService = reportService;
         this.saleQueryService = saleQueryService;
         this.stockLevelService = stockLevelService;
     }
@@ -33,12 +37,14 @@ public class DashboardService {
                 levels.stream().filter(level -> level.status() == StockLevelStatus.LOW).toList();
         List<StockLevelService.ProductStockLevel> negativeStock =
                 levels.stream().filter(level -> level.status() == StockLevelStatus.NEGATIVE).toList();
-        return new DashboardSummary(totals, lowStock, negativeStock, stockLevelService.stockValue(levels));
+        return new DashboardSummary(totals, lowStock, negativeStock, stockLevelService.stockValue(levels),
+                reportService.todayProfit());
     }
 
     public record DashboardSummary(SaleQueryService.SaleTotals totals,
                                     List<StockLevelService.ProductStockLevel> lowStock,
                                     List<StockLevelService.ProductStockLevel> negativeStock,
-                                    StockLevelService.StockValue stockValue) {
+                                    StockLevelService.StockValue stockValue,
+                                    ReportService.TodayProfit todayProfit) {
     }
 }

@@ -20,6 +20,7 @@ const LINKS = [
   { href: "/owner/sales", label: "Sales" },
   { href: "/owner/day-close", label: "Day close" },
   { href: "/owner/expenses", label: "Expenses" },
+  { href: "/owner/reports", label: "Reports" },
   { href: "/owner/settings", label: "Settings" },
 ];
 

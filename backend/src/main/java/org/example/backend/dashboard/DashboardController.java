@@ -40,13 +40,17 @@ public class DashboardController {
                 summary.stockValue().value(),
                 summary.stockValue().productsWithoutCost(),
                 summary.totals().expensesCash(),
-                summary.totals().expensesMomo());
+                summary.totals().expensesMomo(),
+                summary.todayProfit() == null ? null : summary.todayProfit().grossProfit(),
+                summary.todayProfit() == null ? 0 : summary.todayProfit().costedLines(),
+                summary.todayProfit() == null ? 0 : summary.todayProfit().totalLines());
     }
 
     public record DashboardResponse(BigDecimal salesToday, BigDecimal discountsToday, BigDecimal expectedCash,
                                      BigDecimal expectedMomo, BigDecimal salesCash, BigDecimal salesMomo,
                                      List<StockLevelResponse> lowStock, List<StockLevelResponse> negativeStock,
                                      BigDecimal stockValue, int productsWithoutCost,
-                                     BigDecimal expensesCash, BigDecimal expensesMomo) {
+                                     BigDecimal expensesCash, BigDecimal expensesMomo,
+                                     BigDecimal grossProfitToday, long costedLinesToday, long totalLinesToday) {
     }
 }

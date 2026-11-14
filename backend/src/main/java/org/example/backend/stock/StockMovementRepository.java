@@ -49,4 +49,18 @@ public interface StockMovementRepository extends JpaRepository<StockMovement, Lo
     List<StockMovement> findBySaleLineId(Long saleLineId);
 
     boolean existsByReversedMovementId(Long reversedMovementId);
+
+    /** Cost of write-offs in [from, to): sum of |quantity| x unit_cost, as a positive number. Costed rows only. */
+    @Query("select coalesce(-sum(m.quantity * m.unitCost), 0) from StockMovement m "
+            + "where m.shop = :shop and m.type = org.example.backend.stock.StockMovementType.WRITE_OFF "
+            + "and m.createdAt >= :from and m.createdAt < :to and m.unitCost is not null")
+    BigDecimal sumWriteOffCostBetween(@Param("shop") Shop shop, @Param("from") java.time.Instant from,
+                                      @Param("to") java.time.Instant to);
+
+    /** Write-offs in the range with no cost, which can't be valued; the report counts them. */
+    @Query("select count(m) from StockMovement m "
+            + "where m.shop = :shop and m.type = org.example.backend.stock.StockMovementType.WRITE_OFF "
+            + "and m.createdAt >= :from and m.createdAt < :to and m.unitCost is null")
+    long countUncostedWriteOffsBetween(@Param("shop") Shop shop, @Param("from") java.time.Instant from,
+                                       @Param("to") java.time.Instant to);
 }

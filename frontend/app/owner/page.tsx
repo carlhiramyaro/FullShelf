@@ -25,6 +25,9 @@ type DashboardSummary = {
   productsWithoutCost: number;
   expensesCash: number;
   expensesMomo: number;
+  grossProfitToday: number | null;
+  costedLinesToday: number;
+  totalLinesToday: number;
 };
 
 async function fetchDashboard(): Promise<DashboardSummary> {
@@ -63,6 +66,14 @@ export default async function DashboardPage() {
           hint={`Cash ${formatCash(summary.salesCash)} · MoMo ${formatCash(summary.salesMomo)}`}
         />
         <StatTile label="Discounts today" value={formatCash(summary.discountsToday)} />
+        {summary.grossProfitToday !== null && (
+          <StatTile
+            label="Gross profit today"
+            value={formatCash(summary.grossProfitToday)}
+            hint={`Counts ${summary.costedLinesToday} of ${summary.totalLinesToday} sale lines${summary.grossProfitToday < 0 ? " · ⚠ Loss" : ""}`}
+            tone={summary.grossProfitToday < 0 ? "error" : undefined}
+          />
+        )}
         <StatTile
           label="Expected cash"
           value={formatCash(summary.expectedCash)}

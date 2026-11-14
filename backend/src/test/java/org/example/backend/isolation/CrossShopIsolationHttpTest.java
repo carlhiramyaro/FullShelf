@@ -400,6 +400,7 @@ class CrossShopIsolationHttpTest {
             "GET /api/owner/day-close/{date}",
             "GET /api/owner/expenses",             // ExpenseIntegrationTest: a second shop sees none of them
             "POST /api/owner/expenses/{id}/void",  // ExpenseIntegrationTest: another shop's id gets "No expense N"
+            "GET /api/owner/reports",              // ReportIntegrationTest: a second shop's sales, costs, write-offs and expenses never move it
             "GET /api/staff/roster",
             "POST /api/staff/login",
             "GET /api/staff/sales",
